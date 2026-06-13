@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Slideshow</title>
+
+  <!-- IBM Plex Sans (cached after first load; falls back to system sans-serif offline) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600&display=swap"
+    rel="stylesheet"
+  />
+
+  <style>
+    :root {
+      --bg: #ffffff;
+      --fg: #1a1a1a;
+      --muted: #888888;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      height: 100%;
+    }
+
+    body {
+      font-family: "IBM Plex Sans", system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      overflow: hidden;
+    }
+
+    /* Each slide fills the viewport; only the active one is shown */
+    .slide {
+      display: none;
+      width: 100vw;
+      height: 100vh;
+      padding: 4rem;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    .slide.active {
+      display: flex;
+    }
+
+    /* Navigation arrows */
+    .nav {
+      position: fixed;
+      top: 0;
+      height: 100%;
+      width: 15%;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      color: var(--muted);
+      font-size: 2rem;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    .nav:hover {
+      opacity: 1;
+    }
+
+    .nav.prev {
+      left: 0;
+    }
+
+    .nav.next {
+      right: 0;
+    }
+
+    /* Slide counter */
+    .counter {
+      position: fixed;
+      bottom: 1.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      color: var(--muted);
+      font-size: 0.85rem;
+      letter-spacing: 0.05em;
+    }
+  </style>
+</head>
+<body>
+  <!-- Add or remove .slide blocks to change the deck -->
+  <section class="slide active">
+    <h1>Slideshow</h1>
+  </section>
+  <section class="slide"></section>
+  <section class="slide"></section>
+
+  <button class="nav prev" aria-label="Previous slide">&#8249;</button>
+  <button class="nav next" aria-label="Next slide">&#8250;</button>
+
+  <div class="counter"><span id="current">1</span> / <span id="total">1</span></div>
+
+  <script>
+    const slides = Array.from(document.querySelectorAll(".slide"));
+    const currentEl = document.getElementById("current");
+    const totalEl = document.getElementById("total");
+    let index = 0;
+
+    totalEl.textContent = slides.length;
+
+    function show(i) {
+      index = (i + slides.length) % slides.length; // wraps around
+      slides.forEach((s, n) => s.classList.toggle("active", n === index));
+      currentEl.textContent = index + 1;
+    }
+
+    function next() {
+      show(index + 1);
+    }
+    function prev() {
+      show(index - 1);
+    }
+
+    // Click arrows
+    document.querySelector(".next").addEventListener("click", next);
+    document.querySelector(".prev").addEventListener("click", prev);
+
+    // Keyboard: arrows / space to advance
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowRight" || e.key === " ") {
+        e.preventDefault();
+        next();
+      } else if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        prev();
+      }
+    });
+
+    show(0);
+  </script>
+</body>
+</html>
