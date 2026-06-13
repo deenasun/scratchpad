@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LLM Pre-Training &amp; Post-Training — AI Tech Review</title>
+
+  <!-- IBM Plex Sans (cached after first load; falls back to system sans-serif offline) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- KaTeX for math (CDN; degrades to raw $...$ text offline) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" crossorigin="anonymous" />
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script
+    defer
+    src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+    crossorigin="anonymous"
+    onload="renderMathInElement(document.body, {delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}], throwOnError:false});"
+  ></script>
+
+  <style>
+    :root {
+      --bg: #ffffff;
+      --fg: #1a1a1a;
+      --muted: #888888;
+      --accent: #2563eb;
+      --accent-soft: #eaf0fe;
+      --accent-line: #cdddfb;
+      --line: #e4e4e7;
+      --code-bg: #f4f4f5;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      height: 100%;
+    }
+
+    body {
+      font-family: "IBM Plex Sans", system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      overflow: hidden;
+    }
+
+    /* Each slide fills the viewport; only the active one is shown */
+    .slide {
+      display: none;
+      width: 100vw;
+      height: 100vh;
+      padding: 4rem;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    .slide.active {
+      display: flex;
+    }
+
+    /* ---- Typography ---- */
+    .slide h1 {
+      font-size: 3.4rem;
+      font-weight: 600;
+      line-height: 1.08;
+      letter-spacing: -0.01em;
+    }
+
+    .slide h2 {
+      font-size: 2rem;
+      font-weight: 600;
+      line-height: 1.15;
+      margin-bottom: 1.2rem;
+    }
+
+    .slide p {
+      font-size: 1.25rem;
+      line-height: 1.55;
+    }
+
+    .slide .sub {
+      color: var(--muted);
+      font-size: 1.35rem;
+      margin-top: 1rem;
+    }
+
+    .kicker {
+      display: block;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--accent);
+      margin-bottom: 0.5rem;
+    }
+
+    .muted { color: var(--muted); }
+    .accent { color: var(--accent); }
+    strong { font-weight: 600; }
+    em { font-style: italic; }
+
+    code, .mono {
+      font-family: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+    }
+
+    /* ---- Content slides: left-aligned body, capped width ---- */
+    .slide.content { justify-content: center; }
+
+    .slide .inner {
+      width: 100%;
+      max-width: 66rem;
+      margin: 0 auto;
+      text-align: left;
+    }
+
+    .slide .inner p { margin: 0.7rem 0; }
+
+    .slide ul {
+      list-style: none;
+      margin: 0.6rem 0;
+    }
+
+    .slide li {
+      font-size: 1.2rem;
+      line-height: 1.5;
+      position: relative;
+      padding-left: 1.5rem;
+      margin: 0.55rem 0;
+    }
+
+    .slide li::before {
+      content: "▸";
+      color: var(--accent);
+      position: absolute;
+      left: 0;
+    }
+
+    /* ---- Components ---- */
+    .callout {
+      border-left: 3px solid var(--accent);
+      background: var(--accent-soft);
+      padding: 0.9rem 1.1rem;
+      border-radius: 0 8px 8px 0;
+      font-size: 1.12rem;
+      line-height: 1.5;
+      margin-top: 1.3rem;
+    }
+
+    .box {
+      background: var(--code-bg);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 0.8rem 1rem;
+      margin: 0.5rem 0;
+    }
+
+    .cols {
+      display: flex;
+      gap: 2.5rem;
+      align-items: flex-start;
+    }
+    .cols > div { flex: 1; }
+
+    /* Pipeline strip */
+    .pipeline {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 2.2rem;
+    }
+    .stage {
+      padding: 0.55rem 1rem;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      font-size: 1rem;
+      color: var(--muted);
+      background: #fff;
+    }
+    .stage.on {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--accent-soft);
+      font-weight: 600;
+    }
+    .pipeline .arrow,
+    .pipeline-grid .arrow { color: var(--muted); font-size: 1.1rem; }
+
+    /* Token chips */
+    .tokens {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.3rem;
+      margin: 1.1rem 0;
+    }
+    .tok {
+      font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+      background: var(--code-bg);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 0.28rem 0.5rem;
+      font-size: 1.05rem;
+      white-space: pre;
+    }
+    .tok:nth-child(odd) {
+      background: var(--accent-soft);
+      border-color: var(--accent-line);
+    }
+
+    /* Fill-in-the-blank */
+    .blank {
+      display: inline-block;
+      min-width: 3rem;
+      border-bottom: 3px solid var(--accent);
+      vertical-align: middle;
+    }
+
+    /* Softmax bar chart */
+    .bars { margin: 1.1rem 0 0.6rem; }
+    .bar-row {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      margin: 0.4rem 0;
+      font-size: 1.1rem;
+    }
+    .bar-label {
+      width: 5rem;
+      text-align: right;
+      font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+    }
+    .bar-track {
+      flex: 1;
+      background: var(--code-bg);
+      border-radius: 6px;
+      height: 1.5rem;
+    }
+    .bar-fill {
+      display: block;
+      height: 100%;
+      background: var(--accent);
+      border-radius: 6px;
+    }
+    .bar-val { width: 3rem; color: var(--muted); font-size: 0.95rem; }
+
+    /* Architecture data-flow diagram */
+    .flow {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.3rem;
+      font-size: 0.98rem;
+    }
+    .flow .node {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 0.5rem 0.7rem;
+      background: #fff;
+      text-align: center;
+    }
+    .flow .node .lbl {
+      display: block;
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 0.1rem;
+    }
+    .flow .down {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.8rem;
+      line-height: 1.1;
+    }
+    .flow .blocks {
+      position: relative;
+      border: 1.5px dashed var(--accent);
+      border-radius: 10px;
+      padding: 0.7rem 0.6rem 0.6rem;
+      background: var(--accent-soft);
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+      margin: 0.15rem 0;
+    }
+    .flow .blocks .badge {
+      position: absolute;
+      top: -0.7rem;
+      right: 0.7rem;
+      background: var(--accent);
+      color: #fff;
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 0.12rem 0.55rem;
+      border-radius: 10px;
+    }
+
+    /* Definition list (architecture annotations) */
+    .defs dt {
+      font-weight: 600;
+      color: var(--accent);
+      margin-top: 0.85rem;
+      font-size: 1.05rem;
+    }
+    .defs dt:first-child { margin-top: 0; }
+    .defs dd {
+      margin: 0.15rem 0 0;
+      font-size: 1.02rem;
+      line-height: 1.45;
+    }
+
+    /* Pipeline grouping bracket (Part 1 divider) */
+    .pipeline-grid {
+      display: grid;
+      grid-template-columns: auto auto auto;
+      align-items: center;
+      column-gap: 0.6rem;
+      row-gap: 0.5rem;
+      justify-content: center;
+      margin-top: 2.2rem;
+    }
+    .post-stages {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.55rem 0.75rem;
+      border: 1px dashed var(--line);
+      border-radius: 12px;
+      background: var(--code-bg);
+    }
+    .post-stages .stage {
+      background: #fff;
+      border-color: var(--line);
+      color: #b0b0b0;
+      font-size: 0.92rem;
+    }
+    .post-stages .arrow { color: #c4c4c4; }
+    .brace-label {
+      grid-column: 3;
+      justify-self: center;
+      font-size: 0.72rem;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #b0b0b0;
+    }
+
+    /* Next-token sequence with token-index labels */
+    .seq {
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      gap: 0.7rem;
+      flex-wrap: wrap;
+      margin: 1.9rem 0;
+    }
+    .seq .w {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .seq .w .word {
+      font-size: 1.55rem;
+      font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+    }
+    .seq .w .ix { font-size: 1.05rem; color: var(--muted); }
+    .seq .arrow-big { font-size: 1.8rem; color: var(--accent); padding: 0 0.2rem; }
+
+    /* Vector / embedding visuals (architecture slides) */
+    .vrow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .vgroup-wrap {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.45rem;
+    }
+    .vgroup { display: inline-flex; gap: 0.35rem; }
+    .vcap { font-size: 0.82rem; color: var(--muted); line-height: 1.25; text-align: center; }
+    .vec { display: inline-flex; flex-direction: column; gap: 2px; align-items: center; }
+    .vec .cell {
+      width: 2.6rem;
+      height: 1.2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.72rem;
+      font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+      background: var(--accent-soft);
+      border: 1px solid var(--accent-line);
+      border-radius: 3px;
+      color: #1a3a8a;
+    }
+    .vec.pos .cell { background: #fdeede; border-color: #f3cf9e; color: #8a5a1a; }
+    .vec.sum .cell { background: #e7f7e7; border-color: #bbe3bb; color: #1a6a2a; }
+    .vec .ell { color: var(--muted); font-size: 0.9rem; height: 0.7rem; line-height: 0.4; }
+    .op { font-size: 1.7rem; color: var(--muted); }
+
+    /* Probability output vector */
+    .prob-out { display: flex; align-items: center; justify-content: center; gap: 0.8rem; }
+    .vec.prob .cell { border: none; color: #fff; }
+    .flow .node.ghost { background: var(--code-bg); color: var(--muted); border-style: dashed; }
+
+    /* Shifted input/target table (cross-entropy slide) */
+    .shift {
+      border-collapse: separate;
+      border-spacing: 4px;
+      margin: 0.6rem 0;
+    }
+    .shift td {
+      padding: 0.32rem 0.6rem;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      text-align: center;
+      font-size: 1rem;
+      font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+    }
+    .shift td.rl {
+      border: none;
+      color: var(--muted);
+      font-family: "IBM Plex Sans", sans-serif;
+      text-align: right;
+      padding-right: 0.6rem;
+    }
+    .shift tr:first-child td:not(.rl) { background: var(--accent-soft); border-color: var(--accent-line); }
+    .shift tr:last-child td:not(.rl) { background: #e7f7e7; border-color: #bbe3bb; }
+
+    /* ---- Navigation arrows ---- */
+    .nav {
+      position: fixed;
+      top: 0;
+      height: 100%;
+      width: 15%;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      color: var(--muted);
+      font-size: 2rem;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+    .nav:hover { opacity: 1; }
+    .nav.prev { left: 0; }
+    .nav.next { right: 0; }
+
+    /* Slide counter */
+    .counter {
+      position: fixed;
+      bottom: 1.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      color: var(--muted);
+      font-size: 0.85rem;
+      letter-spacing: 0.05em;
+    }
+  </style>
+</head>
+<body>
+  <!-- =========================================================
+       PART 1 — PRE-TRAINING
+       Add or remove .slide blocks to change the deck.
+       ========================================================= -->
+
+  <!-- 1. Deck title -->
+  <section class="slide active">
+    <h1>Inside an LLM</h1>
+    <p class="sub">Pre-Training &amp; Post-Training — an AI Tech Review</p>
+    <p class="sub muted" style="font-size: 1rem;">June 2026</p>
+  </section>
+
+  <!-- 2. Part 1 divider + pipeline map -->
+  <section class="slide">
+    <span class="kicker">Part 1</span>
+    <h1>Pre-Training</h1>
+    <p class="sub">How raw text becomes a <strong>base model</strong></p>
+    <div class="pipeline-grid">
+      <span class="stage on">Pre-training</span>
+      <span class="arrow">→</span>
+      <div class="post-stages">
+        <span class="stage">SFT</span><span class="arrow">→</span>
+        <span class="stage">Preference alignment</span><span class="arrow">→</span>
+        <span class="stage">RLVR</span>
+      </div>
+      <span class="brace-label">post-training</span>
+    </div>
+  </section>
+
+  <!-- 3. What is pre-training? -->
+  <section class="slide content">
+    <div class="inner">
+      <span class="kicker">Pre-training</span>
+      <h2>What is pre-training?</h2>
+      <p><strong>Goal:</strong> next-token prediction.</p>
+      <ul>
+        <li>Most modern LLMs are based on the transformer architecture.</li>
+        <li>Pre-training involves feeding the transformer enormous amounts of raw text, and learning to predict the next token.</li>
+        <li><strong>Self-supervised</strong>: the "label"/"target" for each position is just the token that actually comes next in the sequence.</li>
+        <li>The result is a <strong>base model</strong> that excels at predicting the next token in a sequence by "pattern matching" with its training data.</li>
+      </ul>
+      <div class="callout">Everything in pre-training reduces to one question: <em>given the tokens so far, what comes next?</em></div>
+    </div>
+  </section>
+
+  <!-- 4. Tokenization -->
+  <section class="slide content">
+    <div class="inner">
+      <span class="kicker">Pre-training</span>
+      <h2>Step 0: Tokenization</h2>
+      <p>Tokens are the atomic units fed to a transformer. Text is split into tokens, and each token maps to an integer ID.</p>
+      <p>The vocabulary of an LLM is the set of all tokens it can input and that it can predict. Typical vocabulary sizes <strong>$d_\text{vocab}$</strong> ≈ 50K (GPT-2) to 100K+ (modern models).</p>
+      <p>Special tokens are used to represent the start of a sequence, the end of a sequence, and padding.</p>
+      <div class="tokens">
+        <p>Tokenized text → <span class="tok">Token</span><span class="tok">ization</span><span class="tok"> is</span><span class="tok"> just</span><span class="tok"> chunk</span><span class="tok">ing</span><span class="tok"> text</span><span class="tok">.</span></p>
+      </div>
+      <p class="mono muted" style="font-size: 1rem; margin-left: 1.5rem;"> Integer IDs → [ 30642, 1634, 318, 655, 16058, 278, 2420, 13 ]</p>
+      <p>Common tokenization strategies include:</p>
+      <ul>
+        <li><strong>Byte-pair encoding (BPE):</strong> break text into subwords, then merge the most frequent pairs to create a vocabulary.</li>
+        <li><strong>Word-level tokenization:</strong> split text into whole words.</li>
+        <li><strong>Character-level tokenization:</strong> split text into individual characters.</li>
+      </ul>
+      <div class="callout">After tokenization, a piece of text becomes a sequence $x_1, x_2, \dots, x_t$, where each $x_i$ is an integer $\in [0, d_\text{vocab} - 1]$.</div>
+    </div>
+  </section>
+
+  <!-- 5. Next-token prediction = the output distribution -->
+  <section class="slide content">
+    <div class="inner">
+      <span class="kicker">Pre-training</span>
+      <h2>Next-token prediction: a distribution over the vocabulary</h2>
+      <p>Given the tokens so far, the model predicts what comes next.</p>
+      <div class="seq">
+        <div class="w"><span class="word">The</span><span class="ix">$x_1$</span></div>
+        <div class="w"><span class="word">cat</span><span class="ix">$x_2$</span></div>
+        <div class="w"><span class="word">sat</span><span class="ix">$x_3$</span></div>
+        <div class="w"><span class="word">on</span><span class="ix">$x_4$</span></div>
+        <div class="w"><span class="word">the</span><span class="ix">$x_5$</span></div>
+        <div class="w"><span class="blank">&nbsp;</span><span class="ix">$x_6$?</span></div>
+        <span class="arrow-big">→</span>
+        <div class="w"><strong class="word accent">mat</strong><span class="ix">most likely</span></div>
+      </div>
+      <div class="cols">
+        <div>
+          <p style="margin-top: 0;">The output of the model is a probability distribution over all possible tokens in its vocabulary.
+          </br>Formally, the model maps the input $x_1, \dots, x_t$ to a <strong>$d_\text{vocab}$-dimensional vector</strong> in which
+          coordinate $i$ is the probability that token $i$ comes next given the tokens that came before it
+          — the raw scores that come out of the model's final layer (<strong>logits</strong> $z \in \mathbb{R}^{d_\text{vocab}}$) passed through a <strong>softmax</strong>:</p>
+          $$P(x_{t+1} \mid x_1, \dots, x_t) = \mathrm{softmax}(z)$$
+          <p class="muted" style="margin-bottom: 0;">Inference = sample one token from this vector, append it, repeat. That loop is <strong>autoregression</strong>; temperature / top-p tune how adventurous it is.</p>
+        </div>
+        <div>
+          <p class="muted" style="text-align: center; margin-top: 0;">P( next token | "The cat sat on the" )</p>
+          <div class="bars">
+            <div class="bar-row"><span class="bar-label mono">mat</span><span class="bar-track"><span class="bar-fill" style="width: 61%;"></span></span><span class="bar-val">0.61</span></div>
+            <div class="bar-row"><span class="bar-label mono">rug</span><span class="bar-track"><span class="bar-fill" style="width: 18%;"></span></span><span class="bar-val">0.18</span></div>
+            <div class="bar-row"><span class="bar-label mono">floor</span><span class="bar-track"><span class="bar-fill" style="width: 9%;"></span></span><span class="bar-val">0.09</span></div>
+            <div class="bar-row"><span class="bar-label mono">couch</span><span class="bar-track"><span class="bar-fill" style="width: 5%;"></span></span><span class="bar-val">0.05</span></div>
+            <div class="bar-row"><span class="bar-label mono">…</span><span class="bar-track"><span class="bar-fill" style="width: 0%;"></span></span><span class="bar-val">...</span></div>
+            <div class="bar-row"><span class="bar-label mono">rest</span><span class="bar-track"><span class="bar-fill" style="width: 7%;"></span></span><span class="bar-val">0.07</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. Inside the box, part 1: from text to vectors -->
+  <section class="slide content">
+    <div class="inner">
+      <span class="kicker">Pre-training</span>
+      <h2>Inside the box - 1: from text to vectors</h2>
+      <div style="text-align: center;">
+        <div class="box mono" style="display: inline-block;">The cat sat</div>
+        <div class="down" style="margin: 0.45rem 0;">↓ &nbsp;<strong>tokenizer</strong> — prepend a special <span class="mono">&lt;SOS&gt;</span> start token, split the rest into tokens, map each to an integer ID</div>
+        <div class="tokens" style="justify-content: center;">
+          <span class="tok" style="background: #fdeede; border-color: #f3cf9e; color: #8a5a1a;">&lt;SOS&gt;</span><span class="tok">464</span><span class="tok">3797</span><span class="tok">3332</span>
+        </div>
+        <div class="down" style="margin: 0.45rem 0;">↓ &nbsp;<strong>embedding lookup</strong>, then <strong>+ positional encoding</strong> (so the model knows token order)</div>
+        <div class="vrow">
+          <div class="vgroup-wrap">
+            <div class="vgroup">
+              <div class="vec"><span class="cell">0.9</span><span class="cell">-0.1</span><span class="cell">0.4</span><span class="ell">⋮</span></div>
+              <div class="vec"><span class="cell">0.2</span><span class="cell">-1.3</span><span class="cell">0.8</span><span class="ell">⋮</span></div>
+              <div class="vec"><span class="cell">1.1</span><span class="cell">0.4</span><span class="cell">-0.9</span><span class="ell">⋮</span></div>
+              <div class="vec"><span class="cell">-0.7</span><span class="cell">0.5</span><span class="cell">0.3</span><span class="ell">⋮</span></div>
+            </div>
+            <div class="vcap">token embeddings<br>each $\in \mathbb{R}^{d_\text{model}}$ &nbsp;(e.g. 4096)</div>
+          </div>
+          <span class="op">+</span>
+          <div class="vgroup-wrap">
+            <div class="vgroup">
+              <div class="vec pos"><span class="cell">0.1</span><span class="cell">-0.2</span><span class="cell">0.0</span><span class="ell">⋮</span></div>
+              <div class="vec pos"><span class="cell">0.0</span><span class="cell">0.8</span><span class="cell">0.1</span><span class="ell">⋮</span></div>
+              <div class="vec pos"><span class="cell">0.3</span><span class="cell">0.6</span><span class="cell">0.4</span><span class="ell">⋮</span></div>
+              <div class="vec pos"><span class="cell">0.5</span><span class="cell">0.2</span><span class="cell">0.9</span><span class="ell">⋮</span></div>
+            </div>
+            <div class="vcap">positional<br>encodings</div>
+          </div>
+          <span class="op">=</span>
+          <div class="vgroup-wrap">
+            <div class="vgroup">
+              <div class="vec sum"><span class="cell">1.0</span><span class="cell">-0.3</span><span class="cell">0.4</span><span class="ell">⋮</span></div>
+              <div class="vec sum"><span class="cell">0.2</span><span class="cell">-0.5</span><span class="cell">0.9</span><span class="ell">⋮</span></div>
+              <div class="vec sum"><span class="cell">1.4</span><span class="cell">1.0</span><span class="cell">-0.5</span><span class="ell">⋮</span></div>
+              <div class="vec sum"><span class="cell">-0.2</span><span class="cell">0.7</span><span class="cell">1.2</span><span class="ell">⋮</span></div>
+            </div>
+            <div class="vcap">position-aware input vectors<br>(&lt;SOS&gt;, The, cat, sat)</div>
+          </div>
+        </div>
+        <div class="down" style="margin: 0.6rem 0 0;">↓ &nbsp;these vectors enter the transformer stack...</div>
+      </div>
+      <div class="callout"><strong>Embedding</strong> = a learned vector per token (the model's "vocabulary" of meanings). One vector per token flows in — and one per token flows out of every layer that follows. The <span class="mono">&lt;SOS&gt;</span> token gives the model a slot to predict the very first real token from.</div>
+    </div>
+  </section>
+
+  <!-- 7. Inside the box, part 2: the transformer stack -->
+  <section class="slide content">
+    <div class="inner">
+      <span class="kicker">Pre-training</span>
+      <h2>Inside the box - 2: the transformer stack</h2>
+      <div class="cols">
+        <!-- Left: the stack, ending in ONE distribution per input position -->
+        <div style="max-width: 26rem;">
+          <div class="flow">
+            <div class="node ghost">4 position-aware input vectors<span class="lbl">one per token: &lt;SOS&gt;, The, cat, sat</span></div>
+            <div class="down">↓</div>
+            <div class="blocks">
+              <span class="badge">× N&nbsp;&nbsp;(32–100+)</span>
+              <div class="node">Self-attention</div>
+              <div class="down">↓ residual + norm</div>
+              <div class="node">MLP</div>
+              <div class="down">↓ residual + norm</div>
+            </div>
+            <div class="down">↓</div>
+            <div class="node">Final layer norm</div>
+            <div class= "down">↓</div>
+            <div class="node">Unembedding (a fully-connected linear layer)</div>
+            <div class="down">↓ logits: <span class="lbl">one $\mathbb{R}^{d_\text{vocab}}$ score-vector per position</span></div>
+            <div class="node">softmax <em>(at every position)</em></div>
+            <!-- one R^d_vocab distribution per input position -->
+            <div style="display: flex; gap: 0.45rem; justify-content: center; align-items: flex-end; margin-top: 0.2rem;">
+              <div style="display: flex; flex-direction: column; align-items: center; gap: 0.3rem; opacity: 0.4;">
+                <div class="vec prob"><span class="cell" style="background: rgba(37,99,235,0.5);"></span><span class="cell" style="background: rgba(37,99,235,0.12);"></span><span class="cell" style="background: rgba(37,99,235,0.22);"></span><span class="ell">⋮</span></div>
+                <span class="mono" style="font-size: 0.72rem; color: var(--muted);">&lt;SOS&gt;</span>
+              </div>
+              <div style="display: flex; flex-direction: column; align-items: center; gap: 0.3rem; opacity: 0.4;">
+                <div class="vec prob"><span class="cell" style="background: rgba(37,99,235,0.14);"></span><span class="cell" style="background: rgba(37,99,235,0.55);"></span><span class="cell" style="background: rgba(37,99,235,0.18);"></span><span class="ell">⋮</span></div>
+                <span class="mono" style="font-size: 0.72rem; color: var(--muted);">The</span>
+              </div>
+              <div style="display: flex; flex-direction: column; align-items: center; gap: 0.3rem; opacity: 0.4;">
+                <div class="vec prob"><span class="cell" style="background: rgba(37,99,235,0.2);"></span><span class="cell" style="background: rgba(37,99,235,0.16);"></span><span class="cell" style="background: rgba(37,99,235,0.5);"></span><span class="ell">⋮</span></div>
+                <span class="mono" style="font-size: 0.72rem; color: var(--muted);">cat</span>
+              </div>
+              <div style="display: flex; flex-direction: column; align-items: center; gap: 0.3rem; border: 2px solid var(--accent); border-radius: 8px; padding: 0.35rem 0.45rem; background: var(--accent-soft);">
+                <div class="vec prob"><span class="cell" style="background: rgba(37,99,235,0.12); color: #1a3a8a;">.01</span><span class="cell" style="background: rgba(37,99,235,0.85);">.61</span><span class="cell" style="background: rgba(37,99,235,0.14); color: #1a3a8a;">.02</span><span class="cell" style="background: rgba(37,99,235,0.34); color: #1a3a8a;">.18</span><span class="ell">⋮</span></div>
+                <span class="mono" style="font-size: 0.72rem; color: var(--accent); font-weight: 600;">sat</span>
+              </div>
+            </div>
+            <div style="text-align: center; font-size: 0.8rem; color: var(--accent); margin-top: 0.35rem;">At inference we read <strong>only the probability distributions at the most-recent input token's position,</strong> which are the predictions of what should come immediately after the given sequence.</div>
+          </div>
+        </div>
+        <!-- Right: what each piece does + the key insight -->
+        <div>
+          <dl class="defs">
+            <dt>Self-attention</dt>
+            <dd>Each position pulls in information from other positions, via query·key dot products (KQV). This is how context flows between tokens.</dd>
+            <dt>MLP</dt>
+            <dd>An independent per-position transform — where most factual knowledge is thought to live.</dd>
+            <dt>Residuals + layer norm</dt>
+            <dd>Neural network architectural tricks that stabilize gradients and help gradients flow through deep layers!</dd>
+          </dl>
+          <div class="callout" style="margin-top: 1rem;">The stack emits a <strong>full $\mathbb{R}^{d_\text{vocab}}$ distribution at every position</strong>, in a single pass — each predicts the token that follows its own prefix. <strong>Training</strong> uses all of them (one next-token loss per position); <strong>inference</strong> reads only the last.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8. The training loss -->
+  <section class="slide content">
+    <div class="inner">
+      <span class="kicker">Pre-training</span>
+      <h2>How it learns: cross-entropy loss</h2>
+      <p>We want the model to put <strong>high probability on the token that actually came next</strong>. So we minimize the negative log-likelihood, averaged over every position:</p>
+      $$\mathcal{L}(\theta) = -\sum_{t} \log P_\theta\!\left(x_{t+1} \mid x_1, \dots, x_t\right)$$
+      <ul>
+        <li>$\theta$ is the model's weights, which are updated during training.</li>
+        <li>$P_\theta$ is the model's output distribution</li>
+        <li>$P_\theta(x_{t+1} \mid x_1, \dots, x_t)$ is the probability the model assigns to the true next token $x_{t+1}$ given the input sequence $x_1, \dots, x_t$</li>
+      </ul>
+      <div class="cols">
+        <div>
+          <p style="margin-top: 0;"><strong>Intuition</strong>: each term is -log(probability the model assigned to the correct next-token).</p>
+          <ul>
+            <li>If the model assigns a lot of probability to the true next token, $P_\theta(x_{t+1} \mid x_1, \dots, x_t) \approx 1$, and $-\log(1) = 0$: no penalty.</li>
+            <li>If the model assigns a low probability to the true next token, then the loss at timestep $t$ is very high.</li>
+            <li>The goal of training is to drive down the model's <strong>"surprise"</strong> at the real next token.</li>
+          </ul>
+        </div>
+        <div>
+          <p style="margin-top: 0;">We know the whole sequence up front, so the <strong>targets are just the input shifted left by one</strong>:</p>
+          <table class="shift">
+            <tr><td class="rl">input</td><td>The</td><td>cat</td><td>sat</td><td>on</td><td>the</td></tr>
+            <tr><td class="rl">target</td><td>cat</td><td>sat</td><td>on</td><td>the</td><td>mat</td></tr>
+          </table>
+          <p class="vcap" style="text-align: left;">During training, one LLM forward pass can score all 5 predictions in parallel. Inside the attention layers, a causal mask stops each position from "peeking" ahead to the actual tokens that come after it.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 9. What you get: fancy autocomplete -->
+  <section class="slide content">
+    <div class="inner">
+      <span class="kicker">Pre-training</span>
+      <h2>The result: fancy autocomplete</h2>
+      <p>After pre-training, the base model is a brilliant next-token predictor — but it is <strong>not</strong> an assistant. It just continues text in the most plausible way.</p>
+      <div class="cols">
+        <div>
+          <p class="muted" style="margin-bottom: 0.3rem;">Prompt</p>
+          <div class="box mono">What is the capital of France?</div>
+          <p class="muted" style="margin: 0.6rem 0 0.3rem;">A base model might just continue…</p>
+          <div class="box mono">What is the capital of Germany?<br />What is the capital of Italy? …</div>
+          <p class="muted" style="font-size: 1rem;">(it saw lists of quiz questions in training)</p>
+        </div>
+        <div>
+          <p class="muted" style="margin-bottom: 0.3rem;">What we actually want</p>
+          <div class="box mono accent">The capital of France is Paris.</div>
+        </div>
+      </div>
+      <ul>
+        <li>The model absorbed enormous <strong>knowledge</strong>, grammar, style, even some reasoning — purely as a side effect of learning to represent and predict text effectively.</li>
+        <li>But it has no notion of being <em>asked</em> and <em>answering</em>. Teaching that behavior is <strong>post-training</strong> → Part 2.</li>
+      </ul>
+    </div>
+  </section>
+
+  <button class="nav prev" aria-label="Previous slide">&#8249;</button>
+  <button class="nav next" aria-label="Next slide">&#8250;</button>
+
+  <div class="counter"><span id="current">1</span> / <span id="total">1</span></div>
+
+  <script>
+    const slides = Array.from(document.querySelectorAll(".slide"));
+    const currentEl = document.getElementById("current");
+    const totalEl = document.getElementById("total");
+    let index = 0;
+
+    totalEl.textContent = slides.length;
+
+    function show(i) {
+      index = (i + slides.length) % slides.length; // wraps around
+      slides.forEach((s, n) => s.classList.toggle("active", n === index));
+      currentEl.textContent = index + 1;
+    }
+
+    function next() {
+      show(index + 1);
+    }
+    function prev() {
+      show(index - 1);
+    }
+
+    // Click arrows
+    document.querySelector(".next").addEventListener("click", next);
+    document.querySelector(".prev").addEventListener("click", prev);
+
+    // Keyboard: arrows / space to advance
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowRight" || e.key === " ") {
+        e.preventDefault();
+        next();
+      } else if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        prev();
+      }
+    });
+
+    show(0);
+  </script>
+</body>
+</html>
