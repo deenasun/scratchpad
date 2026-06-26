@@ -33,6 +33,10 @@
       --accent-line: #cdddfb;
       --line: #e4e4e7;
       --code-bg: #f4f4f5;
+      --ref: #5F509D;
+      --ref-soft: #eeecf5;
+      --ref-line: #d5d2e4;
+      --ref-muted: #5F509D;
     }
 
     * {
@@ -571,7 +575,7 @@
       font-weight: 600;
     }
 
-    /* Part 3 — SFT: chat-templated example with prompt-mask vs response-loss coloring (S17) */
+    /* Part 3 — SFT: chat-templated example with prompt-mask vs. response-loss coloring (S17) */
     .ct-mask {
       color: var(--muted);
       background: rgba(0,0,0,0.04);
@@ -624,6 +628,72 @@
     }
     .shift tr:first-child td:not(.rl) { background: var(--accent-soft); border-color: var(--accent-line); }
     .shift tr:last-child td:not(.rl) { background: #e7f7e7; border-color: #bbe3bb; }
+
+    /* External references (papers, docs, etc.) */
+    .refs {
+      margin-top: 0.65rem;
+      padding: 0.55rem 0.75rem;
+      background: var(--ref-soft);
+      border: 1px solid var(--ref-line);
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+    .refs a {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.35rem 0.55rem;
+      font-size: 0.82rem;
+      line-height: 1.35;
+      color: var(--ref);
+      text-decoration: none;
+    }
+    .refs a:hover { text-decoration: underline; }
+    .refs .ref-id {
+      font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--ref-muted);
+      flex-shrink: 0;
+    }
+    .refs a:hover .ref-id { color: var(--ref); }
+
+    /* Collected references slide */
+    .ref-deck { width: 100%; max-width: 74rem; margin: 0 auto; }
+    .ref-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.7rem 1.8rem;
+      margin-top: 0.4rem;
+    }
+    .ref-group { break-inside: avoid; }
+    .ref-group h3 {
+      font-size: 0.74rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--accent);
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+      padding-bottom: 0.18rem;
+      border-bottom: 1px solid var(--line);
+    }
+    .ref-list a {
+      display: block;
+      font-size: 0.72rem;
+      line-height: 1.32;
+      color: var(--fg);
+      text-decoration: none;
+      margin: 0.2rem 0;
+    }
+    .ref-list a:hover { color: var(--accent); text-decoration: underline; }
+    .ref-list .rid {
+      font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+      color: var(--muted);
+      font-size: 0.68rem;
+    }
+    .ref-list a:hover .rid { color: var(--accent); }
 
     /* ---- Navigation arrows ---- */
     .nav {
@@ -705,9 +775,9 @@
   <section class="slide content">
     <div class="inner">
       <span class="kicker">Pre-training</span>
-      <h2>Step 0: Tokenization</h2>
+      <h2>Tokenization</h2>
       <p>Tokens are the atomic units fed to a transformer. Text is split into tokens, and each token maps to an integer ID.</p>
-      <p>The vocabulary of an LLM is the set of all tokens it can input and that it can predict. Typical vocabulary sizes <strong>$d_\text{vocab}$</strong> ≈ 50K (GPT-2) to 100K+ (modern models).</p>
+      <p>The vocabulary of an LLM is the set of all tokens it can take as input and predict. Typical vocabulary sizes <strong>$d_\text{vocab}$</strong> ≈ 50K (GPT-2) to 100K+ (modern models).</p>
       <p>Special tokens are used to represent the start of a sequence, the end of a sequence, and padding.</p>
       <div class="tokens">
         <p>Tokenized text → <span class="tok">Token</span><span class="tok">ization</span><span class="tok"> is</span><span class="tok"> just</span><span class="tok"> chunk</span><span class="tok">ing</span><span class="tok"> text</span><span class="tok">.</span></p>
@@ -742,7 +812,7 @@
       <div class="cols">
         <div>
           <p style="margin-top: 0;">The output of the model is a probability distribution over all possible tokens in its vocabulary.
-          </br>Formally, the model maps the input $x_1, \dots, x_t$ to a <strong>$d_\text{vocab}$-dimensional vector</strong> in which
+          <br />Formally, the model maps the input $x_1, \dots, x_t$ to a <strong>$d_\text{vocab}$-dimensional vector</strong> in which
           coordinate $i$ is the probability that token $i$ comes next given the tokens that came before it
           — the raw scores that come out of the model's final layer (<strong>logits</strong> $z \in \mathbb{R}^{d_\text{vocab}}$) passed through a <strong>softmax</strong>:</p>
           $$P(x_{t+1} \mid x_1, \dots, x_t) = \mathrm{softmax}(z)$$
@@ -767,7 +837,7 @@
   <section class="slide content">
     <div class="inner">
       <span class="kicker">Pre-training</span>
-      <h2>Inside the box - 1: from text to vectors</h2>
+      <h2>Inside the transformer — 1: from text to vectors</h2>
       <div style="text-align: center;">
         <div class="box mono" style="display: inline-block;">The cat sat</div>
         <div class="down" style="margin: 0.45rem 0;">↓ &nbsp;<strong>tokenizer</strong> — prepend a special <span class="mono">&lt;SOS&gt;</span> start token, split the rest into tokens, map each to an integer ID</div>
@@ -816,7 +886,7 @@
   <section class="slide content">
     <div class="inner">
       <span class="kicker">Pre-training</span>
-      <h2>Inside the box - 2: the transformer stack</h2>
+      <h2>Inside the transformer — 2: the transformer stack</h2>
       <div class="cols">
         <!-- Left: the stack, ending in ONE distribution per input position -->
         <div style="max-width: 26rem;">
@@ -868,6 +938,20 @@
             <dt>Residuals + layer norm</dt>
             <dd>Neural network architectural tricks that stabilize gradients and help gradients flow through deep layers!</dd>
           </dl>
+          <div class="refs">
+            <a href="https://arxiv.org/abs/1706.03762" target="_blank" rel="noopener noreferrer">
+              <span class="ref-id">arXiv:1706.03762</span>
+              <span>Attention Is All You Need — Vaswani et al. (the transformer architecture)</span>
+            </a>
+            <a href="https://jalammar.github.io/illustrated-transformer/" target="_blank" rel="noopener noreferrer">
+              <span class="ref-id">jalammar.github.io</span>
+              <span>The Illustrated Transformer</span>
+            </a>
+            <a href="https://www.youtube.com/watch?v=9-Jl0dxWQs8" target="_blank" rel="noopener noreferrer">
+              <span class="ref-id">YouTube</span>
+              <span>How might LLMs store facts · Deep Learning Chapter 7</span>
+            </a>
+          </div>
           <div class="callout" style="margin-top: 1rem;">The stack emits a <strong>full $\mathbb{R}^{d_\text{vocab}}$ distribution at every position</strong>, in a single pass — each predicts the token that follows its own prefix. <strong>Training</strong> uses all of them (one next-token loss per position); <strong>inference</strong> reads only the last.</div>
         </div>
       </div>
@@ -878,8 +962,8 @@
   <section class="slide content">
     <div class="inner">
       <span class="kicker">Pre-training</span>
-      <h2>How it learns: cross-entropy loss</h2>
-      <p>We want the model to put <strong>high probability on the token that actually came next</strong>. So we minimize the negative log-likelihood, averaged over every position:</p>
+      <h2>Training using cross-entropy loss</h2>
+      <p>We want the model to put <strong>high probability on the token that actually came next</strong>. So we minimize the negative log-likelihood, averaged over every position (or equivalently, maximize the log-likelihood):</p>
       $$\mathcal{L}(\theta) = -\sum_{t} \log P_\theta\!\left(x_{t+1} \mid x_1, \dots, x_t\right)$$
       <ul>
         <li>$\theta$ is the model's weights, which are updated during training.</li>
@@ -911,7 +995,7 @@
   <section class="slide content">
     <div class="inner">
       <span class="kicker">Pre-training</span>
-      <h2>The result: fancy autocomplete</h2>
+      <h2>The result: matmul-powered autocomplete</h2>
       <p>After pre-training, the base model is a brilliant next-token predictor — but it is <strong>not</strong> an assistant. It just continues text in the most plausible way.</p>
       <div class="cols">
         <div>
@@ -928,7 +1012,7 @@
       </div>
       <ul>
         <li>The model absorbed enormous <strong>knowledge</strong>, grammar, style, even some reasoning — purely as a side effect of learning to represent and predict text effectively.</li>
-        <li>But it has no notion of being <em>asked</em> and <em>answering</em>. Teaching that behavior is <strong>post-training</strong> → Part 2.</li>
+        <li>But it has no notion of being <em>asked</em> and <em>answering</em>. Teaching that behavior is <strong>post-training.</strong></li>
       </ul>
     </div>
   </section>
@@ -959,7 +1043,7 @@
     <div class="inner">
       <span class="kicker">Post-training</span>
       <h2>From base model to assistant</h2>
-      <p>Recall: a base model is <strong>fancy autocomplete</strong>. It absorbed grammar, style, and knowledge, but it has no notion of being <em>asked</em> a question or playing the role of an <em>assistant</em>.</p>
+      <p>Recall: a base model is <strong>matmul autocomplete</strong>. It absorbed grammar, style, and knowledge, but it has no notion of being <em>asked</em> a question or playing the role of an <em>assistant</em>.</p>
       <div class="cols">
         <div>
           <p class="muted" style="margin-bottom: 0.3rem;">A base model continues the text…</p>
@@ -1011,16 +1095,16 @@
           </ul>
         </div>
       </div>
-      <div class="callout">A single post-training technique can sometimes cover multiple purposes at the same time. For example, supervised fine-tuning (SFT) can be used to train the model to follow certain instruction patterns asking it to generate code.</div>
+      <div class="callout">A single post-training technique can sometimes cover multiple purposes at the same time. For example, supervised fine-tuning (SFT) can be used to train the model to follow instruction patterns, such as those asking it to generate code.</div>
     </div>
   </section>
 
-  <!-- 13. The 3 axes of post-training -->
+  <!-- 13. The 3 axes of post-training techniques -->
   <section class="slide content">
     <div class="inner">
       <span class="kicker">Post-training</span>
-      <h2>The 3 axes of post-training (i.e. the "how" of post-training)</h2>
-      <p>These are orthogonal dimensions for describing post-training techniques. Any post-training technique can be decomposed into a combination of <strong>Stage × Signal × Algorithm</strong>.</p>
+      <h2>The 3 axes of post-training techniques</h2>
+      <p>These are orthogonal dimensions for describing post-training techniques (i.e. the "how" of post-training). Any post-training technique can be decomposed into a combination of <strong>Stage × Signal × Algorithm</strong>.</p>
       <div class="axes">
         <div class="axis">
           <span class="axis-label">Stage</span><span class="axis-sub">which step of the modern LLM pipeline this technique fits into</span>
@@ -1124,7 +1208,7 @@
             <span class="tok">verifiable rewards</span>
             <span class="tok">AI-generated feedback</span>
           </div>
-          <p class="axnote">↳ human-labeled preference pairs, transformed into scalar rewards by a learned <strong>reward model</strong> (Bradley-Terry — full treatment in Part 4).</p>
+          <p class="axnote">↳ human-labeled preference pairs, transformed into scalar rewards by a learned <strong>reward model</strong> based on the Bradley-Terry probabilistic framework.</p>
         </div>
         <div class="axis">
           <span class="axis-label">Algorithm</span>
@@ -1140,7 +1224,7 @@
       </div>
       <div class="callout">
         <strong>RLAIF</strong> = the same recipe, but preference labels come from an AI judge instead of humans.<br />
-        <strong>RLVR</strong> = same shape, but the signals come from a <em>verifier</em> (unit tests, exact-match) instead of a learned reward model. Coming up next.
+        <strong>RLVR</strong> = same shape, but the signals come from a <em>verifier</em> (unit tests, exact-match) instead of a learned reward model.
       </div>
     </div>
   </section>
@@ -1173,8 +1257,8 @@
       <h2>Supervised Fine-Tuning (SFT)</h2>
       <p>Just like in pre-training, SFT also uses a cross-entropy loss and trains the model on targets which consist of the input sequence shifted over by one token. However, two things change:</p>
       <ul>
-        <li><strong>Data:</strong> structured <code>(prompt, response)</code> pairs formatted with chat-template tokens, instead of raw text.</li>
-        <li><strong>Mask:</strong> the loss is summed <em>only over the response tokens</em>. The system and user prompt are just considered inputs, not tokens we want the model to predict how to output. They are masked so that any differences in the model's probability distribution on the prompt tokens don't contribute to the loss function.</li>
+        <li><strong>Data:</strong> structured <code>(prompt, response)</code> pairs formatted with chat-template tokens (e.g. <code>&lt;|user|&gt;</code> and <code>&lt;|assistant|&gt;</code>), instead of raw text.</li>
+        <li><strong>Mask:</strong> the loss is summed <em>only over the response tokens</em>. The system and user prompt are just considered inputs, not outputs we want the model to learn to predict. They are masked so that any differences in the model's probability distribution on the prompt tokens don't contribute to the loss function.</li>
       </ul>
       <div class="cols" style="margin-top: 1rem; align-items: stretch;">
         <div>
@@ -1287,7 +1371,7 @@
     <div class="inner">
       <span class="kicker">Part 3 · Distillation 1 / 4</span>
       <h2>Sequence-level (data) distillation</h2>
-      <p>The teacher generates a response to a given prompt. The student generates a response to the same prompt. At every position in output, we use the teacher's actual outputted token as the target for SFT, using <strong>standard cross-entropy loss</strong> as the loss function. The target is one-hot encoded, meaning we assign a probability of 1 to the teacher's outputted token and 0 to all other tokens regardless of what the teacher's full probability distribution across all possible tokens was.</p>
+      <p>The teacher and student each generate a response to the same prompt. At every position in the output, we use the teacher's actual outputted token as the target, with <strong>standard cross-entropy loss</strong> as the loss function. The target is one-hot encoded, meaning we assign a probability of 1 to the teacher's outputted token and 0 to all other tokens.</p>
       <p style="margin-top: 0.7rem;">When we calculate the loss for the student trying to predict the next token after the prefix "<span class="mono">…the capital of France is</span>", the target is a <strong>one-hot</strong> on the teacher's "chosen" token:</p>
       <div class="cols" style="margin-top: 0.4rem;">
         <div>
@@ -1312,7 +1396,13 @@
       <p style="margin-top: 0.7rem;">Cross-entropy loss at this position:</p>
       $$\mathcal{L}_\text{pos} = -\log P_\text{student}(\text{Paris} \mid \text{prefix}) = -\log(0.32) \approx 1.14$$
       <p class="muted" style="font-size: 0.92rem;">Summed across all response positions: &nbsp;$\mathcal{L}_\text{seq} = -\sum_{t} \log P_\text{student}(y_t \mid y_{&lt;t}, x)$, &nbsp;where $y_t$ is the teacher's sampled token at position $t$.</p>
-      <div class="callout" style="font-size: 1rem;"><strong>Across training iterations:</strong> the target one-hots are <em>fixed</em> — the teacher generates the response once, and its reused for every iteration during SFT. The student's distribution gradually updates to put all its mass on Paris.</div>
+      <div class="callout" style="font-size: 1rem;"><strong>Across training iterations:</strong> the target one-hots are <em>fixed</em> — the teacher generates the response once, and it's reused for every iteration during SFT. The student's distribution gradually updates to put all its mass on Paris.</div>
+      <div class="refs">
+        <a href="https://arxiv.org/abs/1606.07947" target="_blank" rel="noopener noreferrer">
+          <span class="ref-id">arXiv:1606.07947</span>
+          <span>Sequence-Level Knowledge Distillation — Kim &amp; Rush</span>
+        </a>
+      </div>
     </div>
   </section>
 
@@ -1321,7 +1411,7 @@
     <div class="inner">
       <span class="kicker">Part 3 · Distillation 2 / 4</span>
       <h2>Logit-level (classical) distillation</h2>
-      <p>Assumes we have access to the teacher's <strong>full probability distribution</strong> (i.e. the probability the teacher assigned to every possible token in the vocabulary) at every position in the response. The student is trained to match that distribution, typically via <strong>KL divergence</strong>.</p>
+      <p>Assumes we have access to the teacher's <strong>full probability distribution</strong> (the probability assigned to every possible tokens) at every position in the response. The student learns to match that distribution, typically via <strong>KL divergence</strong>.</p>
       <p style="margin-top: 0.7rem;">At the same position predicting after "<span class="mono">…the capital of France is</span>", the target is now a <strong>soft distribution</strong>:</p>
       <div class="cols" style="margin-top: 0.4rem;">
         <div>
@@ -1345,11 +1435,16 @@
       </div>
       <p style="margin-top: 0.7rem;">KL divergence between teacher and student probability distributions at position $t$:</p>
       $$\begin{aligned}
-        \mathcal{L}_t \;&=\; \mathrm{KL}\!\left(P_\text{teacher}(\cdot \mid x_1, \dots, x_t) \,\big\Vert\, P_\text{student}(\cdot \mid x_1, \dots, x_t)\right) \\
-        &=\; \sum_{w \,\in\, \mathcal{V}} P_\text{teacher}(w \mid x_1, \dots, x_t) \,\log \frac{P_\text{teacher}(w \mid x_1, \dots, x_t)}{P_\text{student}(w \mid x_1, \dots, x_t)}
+        \mathcal{L}_t \;&=\; \mathrm{KL}\!\left(P_\text{teacher}(\cdot \mid x_1, \dots, x_t) \,\big\Vert\, P_\text{student}(\cdot \mid x_1, \dots, x_t)\right) = \sum_{w \,\in\, \mathcal{V}} P_\text{teacher}(w \mid x_1, \dots, x_t) \,\log \frac{P_\text{teacher}(w \mid x_1, \dots, x_t)}{P_\text{student}(w \mid x_1, \dots, x_t)}
       \end{aligned}$$
-      <p class="muted" style="font-size: 0.92rem; margin-top: 0.4rem;">The "$\cdot$" in $P(\cdot \mid x_1, \dots, x_t)$ is shorthand for the <strong>full distribution over the vocabulary</strong> (i.e. the probability of each token in the vocabulary) at position $t$. The expanded form sums over every token $w \in \mathcal{V}$. Both sides are full probability vectors; we're matching <em>shapes</em>, not picking tokens. Total loss summed across positions: $\mathcal{L}_\text{logit} = \sum_t \mathcal{L}_t$.</p>
-      <div class="callout" style="font-size: 1rem;"><strong>Across training iterations:</strong> the teacher's distribution is <em>fixed</em>. The student's probability distribution graudally updates to match the entire <em>shape</em> of the teacher's, inheriting the teacher's uncertainty and latent knowledge about plausible alternatives.</div>
+      <p class="muted" style="font-size: 0.92rem; margin-top: 0.4rem;">The "$\cdot$" in $P(\cdot \mid x_1, \dots, x_t)$ is shorthand for the <strong>full distribution over the vocabulary</strong> (i.e. the probability of each token in the vocabulary) at position $t$. The expanded form sums over every token $w \in \mathcal{V}$. Both sides are full probability vectors. Total loss summed across positions: $\mathcal{L}_\text{logit} = \sum_t \mathcal{L}_t$.</p>
+      <div class="callout" style="font-size: 1rem;"><strong>Across training iterations:</strong> the teacher's distribution is <em>fixed</em>. The student's probability distribution gradually updates to match the entire <em>shape</em> of the teacher's, inheriting the teacher's uncertainty and latent knowledge about plausible alternatives.</div>
+      <div class="refs">
+        <a href="https://arxiv.org/abs/1503.02531" target="_blank" rel="noopener noreferrer">
+          <span class="ref-id">arXiv:1503.02531</span>
+          <span>Distilling the Knowledge in a Neural Network — Hinton et al. (logit-level / KL distillation)</span>
+        </a>
+      </div>
     </div>
   </section>
 
@@ -1358,12 +1453,10 @@
     <div class="inner">
       <span class="kicker">Part 3 · Distillation 3 / 4</span>
       <h2>Reasoning trace distillation</h2>
-      <p>Reasoning trace distillation is sequence-level distillation with a twist:</p>
-      <ul>
-        <li>A strong <strong>teacher</strong> reasoning model solves hard problems and writes long chain-of-thought traces — the <span class="mono">&lt;think&gt;</span> reasoning plus the final answer.</li>
-        <li>Those full traces become <strong>fixed SFT targets</strong>.</li>
-        <li>A smaller <strong>student</strong> model is trained with next-token prediction on every token in the trace and answer (the loss below).</li>
-      </ul>
+      <p>Reasoning trace distillation is sequence-level distillation with a twist:
+        A strong <strong>teacher</strong> reasoning model solves hard problems and writes long chain-of-thought traces — the <span class="mono">&lt;think&gt;</span> reasoning plus the final answer.
+        Those full traces become <strong>fixed SFT targets</strong>.
+        A smaller <strong>student</strong> model is trained with next-token prediction on every token in the trace and answer (the loss below).</p>
       <p style="margin-top: 0.4rem; font-size: 1rem;">One training example (a math problem):</p>
       <div class="box mono" style="font-size: 0.92rem; line-height: 1.5; margin: 0.3rem 0;">
         <span class="ct-mask">&lt;|user|&gt;What is 23 × 47?&lt;|end|&gt;</span><br />
@@ -1376,7 +1469,6 @@
       <p style="margin-top: 0.5rem; font-size: 1rem;">Loss summed across all trace tokens (a trace may be hundreds of tokens long):</p>
       $$\mathcal{L}_\text{trace} = -\sum_{t \,\in\, \text{trace + answer}} \log P_\text{student}(y_t \mid y_{&lt;t}, x)$$
       <div class="callout" style="font-size: 0.98rem; margin-top: 0.9rem;"><strong>Across iterations:</strong> the full trace is <em>fixed</em>. Because the loss covers every token, the student gradually learns to reproduce the <em>reasoning style itself</em>, not just the final answer.</div>
-      <div class="callout" style="font-size: 0.98rem; margin-top: 0.9rem;"><strong>Example - DeepSeek-R1 distillation:</strong> After training the full R1 teacher, DeepSeek generated ~800k reasoning traces and SFT'd existing open models — Qwen 1.5B–32B and Llama 8B/70B — on those complete traces. Checkpoints like <strong>DeepSeek-R1-Distill-Qwen-7B</strong> learned R1's chain-of-thought style and scored far above their size on math and code benchmarks, without running RL on the students themselves.</div>
     </div>
   </section>
 
@@ -1390,7 +1482,7 @@
         <div style="flex: 4;">
           <ul style="margin: 0;">
             <li style="font-size: 0.98rem; margin: 0.32rem 0;"><strong>Sample</strong> — the current model $M_{\theta_t}$ generates one or more candidate responses (rollouts) per prompt.</li>
-            <li style="font-size: 0.98rem; margin: 0.32rem 0;"><strong>Select or construct</strong> — turn those rollouts into <em>good supervision targets</em>: <strong>select</strong> survivors via a scorer (verifier, judge, rubric pass rate, top-$k$), or <strong>construct</strong> targets from the same model with privileged context (reference solution, rubric, self-reflection).</li>
+            <li style="font-size: 0.98rem; margin: 0.32rem 0;"><strong>Select or construct</strong> — turn those rollouts into <em>good supervision targets:</em> <strong>select</strong> survivors via a scorer (verifier, judge, rubric pass rate, top-$k$), or <strong>construct</strong> targets from the same model with privileged context (reference solution, rubric, self-reflection).</li>
             <li style="font-size: 0.98rem; margin: 0.32rem 0;"><strong>Train</strong> — update the student to match those targets: SFT on chosen sequences, or token-level distillation from the model's privileged view → $M_{\theta_{t+1}}$.</li>
             <li style="font-size: 0.98rem; margin: 0.32rem 0;"><strong>Repeat</strong> — $M_{\theta_{t+1}}$ becomes the new $M_{\theta_t}$; resample and repeat. Unlike other distillation flavors, targets refresh every round.</li>
           </ul>
@@ -1507,7 +1599,7 @@
       <h2>Reward modeling — Bradley-Terry</h2>
       <p>Most RL methods need a <strong>scalar reward</strong> per (prompt, response) to represent how good a response to the given prompt is. But our data is a triple of (prompt, winner, loser), not scalars. We need a way to convert preferences into a learnable reward signal.</p>
       <p style="margin-top: 0.5rem;"><strong>Solution:</strong> train a <strong>reward model</strong> $r_\phi(x, y) \to \mathbb{R}$ that scores responses s.t. preferred responses get higher scores.</p>
-      <p style="margin-top: 0.5rem;"><strong>Bradley-Terry</strong> is a probabilistic framework for pairwise comparisons. It assumes that every item has a latent score $s_i$, and that the probability that item $i$ beats item $j$ can be explained as the log of their score difference: $P(i > j) = \sigma (s_i - s_j)$.</p>
+      <p style="margin-top: 0.5rem;"><strong>Bradley-Terry</strong> is a probabilistic framework for pairwise comparisons. It assumes that every item has a latent score $s_i$, and that the probability that item $i$ beats item $j$ can be explained as the sigmoid of their score difference: $P(i > j) = \sigma (s_i - s_j)$.</p>
       <p style="margin-top: 0.5rem;">Reward modeling tries to reverse engineer these latent scores by learning a function $r_\phi(x, y) \to \mathbb{R}$ that scores responses such that we recover the Bradley-Terry assumption:</p>
       $$P(y_w \succ y_l \mid x) \;=\; \sigma\!\left(r_\phi(x, y_w) - r_\phi(x, y_l)\right)$$
       <p class="muted" style="font-size: 0.92rem; margin-top: 0.3rem;">Bigger reward gap → higher probability that $y_w$ is preferred over $y_l$</p>
@@ -1517,13 +1609,12 @@
     </div>
   </section>
 
-  <!-- TODO: CONTINUE REVIEWING SLIDES STARTING FROM HERE -->
   <!-- 27. Classical RLHF — the loop + PPO basics -->
   <section class="slide content">
     <div class="inner">
       <span class="kicker">Part 4 · Preference Alignment</span>
       <h2>Classical RLHF — putting it together</h2>
-      <p>RLHF combines three pieces: the SFT-initialized policy, a reward model trained on preferences, and a weight update algorithm (canonically PPO, but others are also used) that fine-tunes the policy using the RM as the reward signal.</p>
+      <p>InstructGPT's RLHF recipe consists of: collecting human preference pairs → training a reward model → fine-tuning the policy using the RM as the reward signal (canonically PPO, although other weight-update algorithms are also used).</p>
       <div class="pipeline" style="margin-top: 0.6rem;">
         <span class="stage on">SFT model<br /><span style="font-size: 0.82rem; font-weight: 400;">π<sub>ref</sub></span></span>
         <span class="arrow">→</span>
@@ -1531,12 +1622,19 @@
         <span class="arrow">→</span>
         <span class="stage on">Fine-tune policy<br /><span style="font-size: 0.82rem; font-weight: 400;">π<sub>θ</sub> via PPO using r<sub>φ</sub></span></span>
       </div>
+      <div class="callout" style="margin-top: 0.6rem; font-size: 0.95rem;"><strong>LLM ↔ RL mapping:</strong> the <strong>policy</strong> is the model being trained; the <strong>state</strong> $s_t$ is the prompt + tokens so far; the <strong>action</strong> $a_t$ is the next token; a full response is a <strong>trajectory</strong>; the <strong>reward</strong> $r_\phi(x, y)$ is assigned once per trajectory.</div>
       <p style="margin-top: 0.6rem;">The <strong>RLHF objective</strong> being maximized over the policy $\pi_\theta$:</p>
-      $$\max_{\pi_\theta} \;\mathbb{E}_{x \sim \mathcal{D},\, y \sim \pi_\theta(\cdot \mid x)}\!\left[r_\phi(x, y)\right] \;-\; \beta \,\mathrm{KL}\!\left(\pi_\theta(\cdot \mid x) \,\big\Vert\, \pi_\text{ref}(\cdot \mid x)\right)$$
-      <p class="muted" style="font-size: 0.9rem;">Expected reward (under the current policy) minus a <strong>KL penalty</strong> against the SFT reference policy $\pi_\text{ref}$. Without the KL, the policy can drift far from a sensible language model and collapse to high-reward gibberish.</p>
-      <p style="margin-top: 0.6rem;"><strong>PPO</strong> is the algorithm that computes the weight updates that maximize this objective. The analog between RL and LLM is that the <strong>state</strong> $s_t$ is the prompt + tokens so far, the <strong>action</strong> $a_t$ is the next token, a full response is a <strong>trajectory</strong>, and the <strong>reward</strong> $r_\phi(x, y)$ arrives at the trajectory's end. PPO then uses a <strong>clipped surrogate objective</strong> to bound how much the policy can change per update:</p>
+      $$\max_{\pi_\theta} \;\mathbb{E}_{x \sim \mathcal{D},\, y \sim \pi_\theta(\cdot \mid x)}\!\left[r_\phi(x, y) \;-\; \beta \,\mathrm{KL}\!\left(\pi_\theta(\cdot \mid x) \,\big\Vert\, \pi_\text{ref}(\cdot \mid x)\right)\right]$$
+      <p class="muted" style="font-size: 0.9rem;">Expected reward (under the current policy) minus a <strong>KL penalty</strong> against the SFT-ed reference policy $\pi_\text{ref}$. Without the KL, the policy can drift far from a sensible language model and collapse to high-reward gibberish.</p>
+      <p style="margin-top: 0.6rem;"><strong>PPO</strong> is the algorithm that updates $\pi_\theta$ to maximize the objective above:</p>
       $$\mathcal{L}^{\mathrm{CLIP}}(\theta) \;=\; \mathbb{E}_t\!\left[\min\!\left(\rho_t(\theta)\, A_t,\;\; \mathrm{clip}\!\left(\rho_t(\theta),\, 1-\epsilon,\, 1+\epsilon\right) A_t\right)\right]$$
       <p class="muted" style="font-size: 0.88rem; margin-top: 0.3rem;">$\rho_t(\theta) = \pi_\theta(a_t \mid s_t) / \pi_{\theta_\text{old}}(a_t \mid s_t)$ is the <strong>policy ratio</strong> (how much more or less the new policy favors that token vs. the previous iteration); $A_t$ is the <strong>advantage</strong> (how much better the action did than expected, derived from $r_\phi$ minus a learned baseline). The clip $[1-\epsilon,\, 1+\epsilon]$ stops the ratio from blowing up in one update — bounding per-step change is what keeps PPO stable on the noisy gradients you get from RL rollouts.</p>
+      <div class="refs">
+        <a href="https://cameronrwolfe.substack.com/p/ppo-llm" target="_blank" rel="noopener noreferrer">
+          <span class="ref-id">cameronrwolfe.substack.com</span>
+          <span>Proximal Policy Optimization (PPO): The Key to LLM Alignment — Cameron R. Wolfe</span>
+        </a>
+      </div>
     </div>
   </section>
 
@@ -1545,7 +1643,7 @@
     <div class="inner">
       <span class="kicker">Part 4 · Preference Alignment</span>
       <h2>DPO — skip the reward model</h2>
-      <p>The KL-regularized reward maximization's objective has a closed form solution for the optimal policy $\pi^*$ that can be written in terms of $\pi_\text{ref}$ and $r$. With some math, we can derive a loss function that only depends on the learnable policy $\pi_\theta$, with $\pi_\text{ref}$ as a fixed reference. No RM needed to train!</p>
+      <p>The KL-regularized reward-maximization objective has a closed-form solution for the optimal policy $\pi^*$ that can be written in terms of $\pi_\text{ref}$ and $r$. With some math, we can derive a loss function that only depends on the learnable policy $\pi_\theta$, with $\pi_\text{ref}$ as a fixed reference. No RM needed to train!</p>
       <p class="muted" style="font-size: 0.92rem; margin-top: 0.4rem;">$Z(x) = \sum_y \pi_\text{ref}(y \mid x) \exp(r(x, y)/\beta)$ is the <strong>partition function</strong> — it normalizes $\pi^*$ into a valid probability distribution over all possible responses $y$. Generally intractable to compute (a sum over the response space), but conveniently it cancels in step (3), so we never need to.</p>
       $$\begin{aligned}
         \text{(1) Optimal policy:} \quad & \pi^*(y \mid x) \;=\; \tfrac{1}{Z(x)} \,\pi_\text{ref}(y \mid x) \,\exp\!\left(\tfrac{1}{\beta} \, r(x, y)\right) \\[6pt]
@@ -1555,6 +1653,12 @@
       <p style="margin-top: 0.4rem;">Maximum log likelihood on $\mathcal{D}$ (parameterizing $\pi^*$ as the trainable $\pi_\theta$) gives the <strong>DPO loss</strong>:</p>
       $$\mathcal{L}_\text{DPO}(\theta) \;=\; -\mathbb{E}_{(x, y_w, y_l) \sim \mathcal{D}}\!\left[\log \sigma\!\left(\beta \log \tfrac{\pi_\theta(y_w \mid x)}{\pi_\text{ref}(y_w \mid x)} \;-\; \beta \log \tfrac{\pi_\theta(y_l \mid x)}{\pi_\text{ref}(y_l \mid x)}\right)\right]$$
       <div class="callout"><strong>Why DPO was a big deal:</strong> Skips the separate RM training run and PPO's iterative rollout-and-update cycle. Instead, DPO is just SGD on a fixed preference dataset $\mathcal{D}$.</div>
+      <div class="refs">
+        <a href="https://arxiv.org/abs/2305.18290" target="_blank" rel="noopener noreferrer">
+          <span class="ref-id">arXiv:2305.18290</span>
+          <span>Direct Preference Optimization — Rafailov et al. (DPO)</span>
+        </a>
+      </div>
     </div>
   </section>
 
@@ -1563,25 +1667,43 @@
     <div class="inner">
       <span class="kicker">Part 4 · Preference Alignment</span>
       <h2>The DPO family</h2>
-      <p>DPO inspired a wave of variants that fix specific issues or relax specific assumptions. You'll see these acronyms in papers.</p>
+      <p>DPO inspired a wave of variants that fix specific issues or relax specific assumptions.</p>
       <div class="cols" style="margin-top: 0.8rem;">
         <div class="purpose-card">
           <div class="pname">KTO</div>
           <div class="ptag">Kahneman-Tversky Optimization</div>
           <p style="margin: 0.4rem 0; font-size: 0.96rem;">No preference <em>pairs</em> needed — just <strong>binary labels</strong> ("good" / "bad") per individual response.</p>
           <p style="margin: 0.3rem 0 0; font-size: 0.85rem; color: var(--muted);"><strong>When to use:</strong> production thumbs-up/down data, no paired comparisons. Common in real deployments.</p>
+          <div class="refs">
+            <a href="https://arxiv.org/abs/2402.01306" target="_blank" rel="noopener noreferrer">
+              <span class="ref-id">arXiv:2402.01306</span>
+              <span>KTO: Model Alignment as Prospect Theoretic Optimization — Ethayarajh et al.</span>
+            </a>
+          </div>
         </div>
         <div class="purpose-card">
           <div class="pname">ORPO</div>
           <div class="ptag">Odds-Ratio Preference Optimization</div>
-          <p style="margin: 0.4rem 0; font-size: 0.96rem;">Merges SFT and preference optimization into a <strong>single training stage</strong> with a unified loss.</p>
+          <p style="margin: 0.4rem 0; font-size: 0.96rem;">Merges SFT and preference optimization into a <strong>single training stage</strong> with a loss that combines $L_{\text{SFT}}$ and $L_{\text{preference}}$ (pushes model towards winning response and away from losing response).</p>
           <p style="margin: 0.3rem 0 0; font-size: 0.85rem; color: var(--muted);"><strong>When to use:</strong> faster recipe; skips the separate SFT checkpoint requirement.</p>
+          <div class="refs">
+            <a href="https://arxiv.org/abs/2403.07691" target="_blank" rel="noopener noreferrer">
+              <span class="ref-id">arXiv:2403.07691</span>
+              <span>ORPO: Monolithic Preference Optimization without Reference Model — Hong et al.</span>
+            </a>
+          </div>
         </div>
         <div class="purpose-card">
           <div class="pname">IPO</div>
           <div class="ptag">Identity Preference Optimization</div>
           <p style="margin: 0.4rem 0; font-size: 0.96rem;">Fixes a known DPO failure mode: the chosen-vs-rejected gap can grow unbounded, <strong>over-fitting</strong> to specific pairs.</p>
           <p style="margin: 0.3rem 0 0; font-size: 0.85rem; color: var(--muted);"><strong>Fix:</strong> adds a regularizer that anchors the gap.</p>
+          <div class="refs">
+            <a href="https://arxiv.org/abs/2310.12036" target="_blank" rel="noopener noreferrer">
+              <span class="ref-id">arXiv:2310.12036</span>
+              <span>A General Theoretical Paradigm to Understand Learning from Human Preferences — Azar et al. (IPO)</span>
+            </a>
+          </div>
         </div>
       </div>
       <div class="callout">All three are still "preference alignment" — they differ in <em>what data they need</em> (KTO), <em>how they integrate with SFT</em> (ORPO), or <em>how they regularize</em> (IPO). The DPO loss is the common ancestor.</div>
@@ -1600,6 +1722,12 @@
           <div class="ptag">RL from AI Feedback</div>
           <p style="margin: 0.4rem 0; font-size: 0.96rem;">Same recipe as RLHF (or DPO) — but the preference labels are produced by an <strong>AI judge</strong> instead of humans. Scales much further; consistency is higher (one model's biases instead of many labelers' noise).</p>
           <p style="margin: 0.3rem 0 0; font-size: 0.85rem; color: var(--muted);"><strong>Trade-off:</strong> the AI judge's blind spots become <em>your</em> blind spots.</p>
+          <div class="refs">
+            <a href="https://arxiv.org/abs/2309.00267" target="_blank" rel="noopener noreferrer">
+              <span class="ref-id">arXiv:2309.00267</span>
+              <span>RLAIF: Scaling RL from Human Feedback with AI Feedback — Lee et al.</span>
+            </a>
+          </div>
         </div>
         <div class="purpose-card">
           <div class="pname">Constitutional AI</div>
@@ -1610,6 +1738,12 @@
             <li><strong>RL phase</strong>: AI preferences derived from constitution-conditioned judgments train the policy.</li>
           </ul>
           <p style="margin: 0.4rem 0 0; font-size: 0.85rem; color: var(--muted);"><strong>Why structured:</strong> the constitution is auditable and editable — a transparent alternative to opaque labeler disagreement.</p>
+          <div class="refs">
+            <a href="https://arxiv.org/pdf/2212.08073" target="_blank" rel="noopener noreferrer">
+              <span class="ref-id">arXiv:2212.08073</span>
+              <span>Constitutional AI: Harmlessness from AI Feedback</span>
+            </a>
+          </div>
         </div>
       </div>
       <div class="callout">RLAIF is the technique family; Constitutional AI is one specific recipe within it. Both are now standard in scalable preference-alignment pipelines.</div>
@@ -1640,7 +1774,7 @@
       <h2>Why drop the reward model?</h2>
       <p>Reward models work, but they're a <strong>learned approximation</strong> of human preference — and learned approximations have systematic failure modes that get <em>worse</em> the more you optimize against them.</p>
       <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.7rem;">
-        <div class="box" style="border-left: 4px solid var(--accent); padding: 0.5rem 0.7rem;"><strong>Reward hacking:</strong> the policy finds responses that score high on the RM without actually being good. The big one — next slide.</div>
+        <div class="box" style="padding: 0.5rem 0.7rem;"><strong>Reward hacking:</strong> the policy finds responses that score high on the RM without actually being good.</div>
         <div class="box" style="padding: 0.5rem 0.7rem;"><strong>Distribution shift:</strong> the RM is trained on a snapshot of model outputs, but the policy drifts during optimization. The RM is increasingly grading out-of-distribution responses, and may need to be retrained on how to assign scores to a new spectrum of responses.</div>
         <div class="box" style="padding: 0.5rem 0.7rem;"><strong>Noisy labels &amp; inherited biases:</strong> human preference data is inconsistent labeler-to-labeler, and the RM also learns systematic human biases. E.g. <em>length bias:</em> annotators slightly prefer longer responses, so RLHF-trained models tend to grow longer over training.</div>
         <div class="box" style="padding: 0.5rem 0.7rem;"><strong>Quality capped by human judgment:</strong> the RM can't be more accurate than the labelers who trained it. For tasks at the frontier of human ability (advanced math, novel code), preferences themselves become unreliable.</div>
@@ -1661,6 +1795,12 @@
           <strong>Classic RL example — CoastRunners</strong>
           <p style="margin: 0.4rem 0; font-size: 0.94rem;">OpenAI 2016 boat-racing agent. Reward = score from in-game targets along the track. Optimal policy: <em>ignore the race entirely</em> and loop in a turbo-bonus circle forever. Maxes the proxy reward; completes the race never.</p>
           <p style="margin: 0; font-size: 0.88rem; color: var(--muted);">The reward function reflected what designers <em>thought</em> winning looked like, not what winning actually is.</p>
+          <div class="refs">
+            <a href="https://openai.com/index/faulty-reward-functions/" target="_blank" rel="noopener noreferrer">
+              <span class="ref-id">OpenAI, 2016</span>
+              <span>Faulty Reward Functions in the Wild — CoastRunners boat-racing</span>
+            </a>
+          </div>
         </div>
         <div class="box">
           <strong>LLM examples</strong>
@@ -1713,7 +1853,7 @@
       <h2>From PPO to GRPO</h2>
       <p>The verifier signal works with any policy-gradient algorithm. But because RLVR's per-sample cost is cheaper and verifier signals don't degrade over training (no RM distribution shift), RLVR runs typically consume <strong>10–100× more samples</strong> than RLHF — so memory and stability dominate algorithm choice.</p>
       <div class="box" style="margin-top: 0.55rem;">
-        <strong>PPO recap (S27).</strong> The clipped surrogate needs an <strong>advantage</strong> $A_t$. PPO uses a learned <strong>critic / value network</strong> $V_\psi(s_t)$ to estimate the expected return from each state, then $A_t = R_t - V_\psi(s_t)$. The critic is a separate transformer, roughly the size of the policy: <em>~2× memory, ~2× gradient compute</em> per step, and itself needs training signal.
+        PPO uses a learned <strong>critic / value network</strong> $V_\psi(s_t)$ to estimate the expected return from each state, then $A_t = R_t - V_\psi(s_t)$. The critic is a separate transformer, roughly the size of the policy: <em>~2× memory, ~2× gradient compute</em> per step, and itself needs training signal.
       </div>
       <p style="margin-top: 0.6rem;"><strong>GRPO's insight</strong> (Group Relative Policy Optimization, DeepSeekMath 2024): drop the critic. Replace it with a <strong>statistical baseline computed over a group of samples</strong>.</p>
       <ul style="margin: 0.25rem 0 0.4rem; padding-left: 1.2rem; font-size: 0.94rem;">
@@ -1723,15 +1863,21 @@
       </ul>
       <p style="font-size: 0.94rem; margin: 0.3rem 0 0.2rem;">GRPO loss (same clipped-surrogate shape as PPO, but advantage from the group baseline + explicit KL inside the loss):</p>
       $$\mathcal{L}_\text{GRPO}(\theta) = -\mathbb{E}\!\left[\tfrac{1}{G}\sum_{i=1}^{G} \min\!\big(\rho_i A_i,\; \mathrm{clip}(\rho_i, 1-\epsilon, 1+\epsilon) A_i\big)\right] + \beta \, \mathrm{KL}(\pi_\theta \,\|\, \pi_\text{ref})$$
-      <div class="callout"><strong>~40–60% less memory than PPO</strong> (no critic to train or store). GRPO is now the default RL algorithm for reasoning models — introduced by DeepSeek in DeepSeekMath, popularized by R1.</div>
+      <div class="callout"><strong>~40–60% less memory than PPO</strong> (no critic to train or store). GRPO is now the default RL algorithm for reasoning models.</div>
+      <div class="refs">
+        <a href="https://arxiv.org/abs/2402.03300" target="_blank" rel="noopener noreferrer">
+          <span class="ref-id">arXiv:2402.03300</span>
+          <span>DeepSeekMath — Shao et al. (introduces GRPO)</span>
+        </a>
+      </div>
     </div>
   </section>
 
-  <!-- 36. Outcome vs process rewards (ORM vs PRM) -->
+  <!-- 36. Outcome vs. process rewards (ORM vs. PRM) -->
   <section class="slide content">
     <div class="inner">
       <span class="kicker">Part 5 · RLVR</span>
-      <h2>Outcome vs process rewards (ORM vs PRM)</h2>
+      <h2>Outcome vs. process rewards (ORM vs. PRM)</h2>
       <p>The reward <em>shape</em> matters as much as the reward <em>source</em>. Two ways to assign credit across a long reasoning trace:</p>
       <div class="cols" style="margin-top: 0.7rem;">
         <div class="purpose-card">
@@ -1745,9 +1891,19 @@
           <div class="ptag">Process Reward Model</div>
           <p style="margin: 0.4rem 0; font-size: 0.94rem;">Scores <strong>each intermediate step</strong> of the reasoning trace — many scalars per trace.</p>
           <p style="margin: 0.3rem 0 0; font-size: 0.88rem; color: var(--muted);"><strong>Denser signal</strong>: can credit a good step even if the answer's wrong (and vice versa). Requires step-level labels — usually a <em>learned</em> RM trained on annotated traces (Math-Shepherd, PRM800K).</p>
+          <div class="refs">
+            <a href="https://arxiv.org/abs/2312.08935" target="_blank" rel="noopener noreferrer">
+              <span class="ref-id">arXiv:2312.08935</span>
+              <span>Math-Shepherd — Wang et al. (process reward model)</span>
+            </a>
+            <a href="https://arxiv.org/abs/2305.20050" target="_blank" rel="noopener noreferrer">
+              <span class="ref-id">arXiv:2305.20050</span>
+              <span>Let's Verify Step by Step — Lightman et al. (PRM800K)</span>
+            </a>
+          </div>
         </div>
       </div>
-      <div class="callout">Trade-off: PRMs give richer credit assignment but reintroduce "learned reward = hackable." Pure RLVR-with-verifiers is <strong>outcome-only by default</strong> — which is part of why it stays robust. R1-Zero used pure ORM-style rule-based rewards, and reasoning still emerged — next slide.</div>
+      <div class="callout">Trade-off: PRMs give richer credit assignment but reintroduce "learned reward = hackable." Pure RLVR-with-verifiers is <strong>outcome-only by default.</strong></div>
     </div>
   </section>
 
@@ -1770,8 +1926,8 @@
         <div class="box">
           <strong>The recipe</strong>
           <ul style="margin: 0.3rem 0 0; padding-left: 1.1rem; font-size: 0.94rem;">
-            <li>Starting point: <strong>DeepSeek-V3-Base</strong> — pre-trained only. No SFT, no preference data.</li>
-            <li>Algorithm: <strong>GRPO</strong> (S35).</li>
+            <li>Starting point: <strong>DeepSeek-V3-Base</strong> — pre-trained only without any SFT or preference data.</li>
+            <li>Algorithm: <strong>GRPO</strong></li>
             <li>Reward: <strong>rule-based outcome rewards</strong> — math exact-match, code unit tests. No learned RM at all.</li>
           </ul>
         </div>
@@ -1783,6 +1939,12 @@
         </div>
       </div>
       <div class="callout"><strong>Implication:</strong> SFT and preference alignment aren't required to <em>bootstrap reasoning</em> — they're required to make the model usable as an assistant. But the reasoning capability can come from RL + verifier alone.</div>
+      <div class="refs">
+        <a href="https://arxiv.org/abs/2501.12948" target="_blank" rel="noopener noreferrer">
+          <span class="ref-id">arXiv:2501.12948</span>
+          <span>DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via Reinforcement Learning</span>
+        </a>
+      </div>
     </div>
   </section>
 
@@ -1790,42 +1952,10 @@
   <section class="slide">
     <span class="kicker">Part 6</span>
     <h1>Case Study: R1</h1>
-    <p class="sub">DeepSeek's January 2025 release — a post-training recipe from an open source frontier model</p>
+    <p class="sub">DeepSeek's January 2025 release — a post-training recipe from an open-source frontier model</p>
   </section>
 
-  <!-- 39. The significance of R1 -->
-  <section class="slide content">
-    <div class="inner">
-      <span class="kicker">Part 6 · DeepSeek-R1</span>
-      <h2>The significance of R1</h2>
-      <p><strong>DeepSeek-R1</strong> is an open-weights reasoning model released by DeepSeek (a Chinese AI lab) in <strong>January 2025</strong>, under an <strong>MIT license</strong>. Three reasons it keeps coming up:</p>
-      <div class="box" style="margin-top: 0.55rem;">
-        <strong>1. Open-weights frontier reasoning.</strong> Matched OpenAI's o1 on most reasoning benchmarks while being MIT-licensed and freely downloadable. First time the open ecosystem caught up to the reasoning frontier.
-        <table style="width: 100%; margin-top: 0.5rem; font-size: 0.9rem; border-collapse: collapse;">
-          <thead>
-            <tr style="border-bottom: 1px solid var(--line);">
-              <th style="text-align: left; padding: 0.3rem 0.5rem; color: var(--muted); font-weight: 500;">Benchmark</th>
-              <th style="text-align: right; padding: 0.3rem 0.5rem;">DeepSeek-R1</th>
-              <th style="text-align: right; padding: 0.3rem 0.5rem;">OpenAI o1</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td style="padding: 0.22rem 0.5rem;">AIME 2024 <span class="muted" style="font-size: 0.82rem;">(competition math, pass@1)</span></td><td style="padding: 0.22rem 0.5rem; text-align: right; font-variant-numeric: tabular-nums;"><strong>79.8%</strong></td><td style="padding: 0.22rem 0.5rem; text-align: right; font-variant-numeric: tabular-nums;">79.2%</td></tr>
-            <tr><td style="padding: 0.22rem 0.5rem;">MATH-500 <span class="muted" style="font-size: 0.82rem;">(broad math)</span></td><td style="padding: 0.22rem 0.5rem; text-align: right; font-variant-numeric: tabular-nums;"><strong>97.3%</strong></td><td style="padding: 0.22rem 0.5rem; text-align: right; font-variant-numeric: tabular-nums;">96.4%</td></tr>
-            <tr><td style="padding: 0.22rem 0.5rem;">GPQA Diamond <span class="muted" style="font-size: 0.82rem;">(graduate physics)</span></td><td style="padding: 0.22rem 0.5rem; text-align: right; font-variant-numeric: tabular-nums;">71.5%</td><td style="padding: 0.22rem 0.5rem; text-align: right; font-variant-numeric: tabular-nums;"><strong>75.7%</strong></td></tr>
-            <tr><td style="padding: 0.22rem 0.5rem;">Codeforces <span class="muted" style="font-size: 0.82rem;">(competitive coding, percentile)</span></td><td style="padding: 0.22rem 0.5rem; text-align: right; font-variant-numeric: tabular-nums;">96.3</td><td style="padding: 0.22rem 0.5rem; text-align: right; font-variant-numeric: tabular-nums;"><strong>96.6</strong></td></tr>
-          </tbody>
-        </table>
-        <p class="muted" style="font-size: 0.82rem; margin: 0.4rem 0 0;">Numbers as reported in the DeepSeek-R1 paper (Jan 2025). R1 reasoning quality is roughly on par with o1.</p>
-      </div>
-      <ol start="2" style="margin: 0.55rem 0 0; padding-left: 1.4rem; font-size: 0.96rem;">
-        <li style="margin-bottom: 0.3rem;"><strong>Popularized GRPO.</strong> DeepSeek introduced GRPO in DeepSeekMath (2024); R1's performance convinced almost every major lab to adopt GRPO into the default RL algorithm for reasoning models.</l>
-        <li><strong>R1-Zero shocked the field.</strong> The earlier R1-Zero variant proved reasoning can emerge from pure RL on a base model without SFT or preference data.</li>
-      </ol>
-    </div>
-  </section>
-
-  <!-- 40. The R1 model family -->
+  <!-- 39. The R1 model family -->
   <section class="slide content">
     <div class="inner">
       <span class="kicker">Part 6 · DeepSeek-R1</span>
@@ -1856,6 +1986,44 @@
         </svg>
       </div>
       <div class="callout"><strong>R1-Zero</strong> = proof of emergent reasoning capabilities. <strong>R1</strong> = the shippable assistant. <strong>R1-Distill</strong> = smaller student models.</div>
+    </div>
+  </section>
+
+  <!-- 40. The significance of R1 -->
+  <section class="slide content">
+    <div class="inner">
+      <span class="kicker">Part 6 · DeepSeek-R1</span>
+      <h2>The significance of R1</h2>
+      <p><strong>DeepSeek-R1</strong> is an open-weights reasoning model released by DeepSeek in <strong>January 2025</strong>. Three big impacts it had on the field:</p>
+      <div class="box" style="margin-top: 0.55rem;">
+        <strong>1. Open-weights frontier reasoning.</strong> Matched OpenAI's o1 on most reasoning benchmarks while being MIT-licensed and freely downloadable. First time the open ecosystem caught up to the reasoning frontier.
+        <table style="width: 100%; margin-top: 0.5rem; font-size: 0.9rem; border-collapse: collapse;">
+          <thead>
+            <tr style="border-bottom: 1px solid var(--line);">
+              <th style="text-align: left; padding: 0.3rem 0.5rem; color: var(--muted); font-weight: 500;">Benchmark</th>
+              <th style="text-align: right; padding: 0.3rem 0.5rem;">DeepSeek-R1</th>
+              <th style="text-align: right; padding: 0.3rem 0.5rem;">OpenAI o1</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td style="padding: 0.22rem 0.5rem;">AIME 2024 <span class="muted" style="font-size: 0.82rem;">(competition math, pass@1)</span></td><td style="padding: 0.22rem 0.5rem; text-align: right; font-variant-numeric: tabular-nums;"><strong>79.8%</strong></td><td style="padding: 0.22rem 0.5rem; text-align: right; font-variant-numeric: tabular-nums;">79.2%</td></tr>
+            <tr><td style="padding: 0.22rem 0.5rem;">MATH-500 <span class="muted" style="font-size: 0.82rem;">(broad math)</span></td><td style="padding: 0.22rem 0.5rem; text-align: right; font-variant-numeric: tabular-nums;"><strong>97.3%</strong></td><td style="padding: 0.22rem 0.5rem; text-align: right; font-variant-numeric: tabular-nums;">96.4%</td></tr>
+            <tr><td style="padding: 0.22rem 0.5rem;">GPQA Diamond <span class="muted" style="font-size: 0.82rem;">(graduate physics)</span></td><td style="padding: 0.22rem 0.5rem; text-align: right; font-variant-numeric: tabular-nums;">71.5%</td><td style="padding: 0.22rem 0.5rem; text-align: right; font-variant-numeric: tabular-nums;"><strong>75.7%</strong></td></tr>
+            <tr><td style="padding: 0.22rem 0.5rem;">Codeforces <span class="muted" style="font-size: 0.82rem;">(competitive coding, percentile)</span></td><td style="padding: 0.22rem 0.5rem; text-align: right; font-variant-numeric: tabular-nums;">96.3</td><td style="padding: 0.22rem 0.5rem; text-align: right; font-variant-numeric: tabular-nums;"><strong>96.6</strong></td></tr>
+          </tbody>
+        </table>
+        <p class="muted" style="font-size: 0.82rem; margin: 0.4rem 0 0;">Numbers as reported in the DeepSeek-R1 paper (Jan 2025). R1 reasoning quality is roughly on par with o1.</p>
+      </div>
+      <ol start="2" style="margin: 0.55rem 0 0; padding-left: 1.4rem; font-size: 0.96rem;">
+        <li style="margin-bottom: 0.3rem;"><strong>Popularized GRPO.</strong> DeepSeek introduced GRPO in DeepSeekMath (2024); R1's performance convinced almost every major lab to adopt GRPO as the default RL algorithm for reasoning models.</li>
+        <li><strong>R1-Zero shocked the field.</strong> The earlier R1-Zero variant proved reasoning can emerge from pure RL on a base model without SFT or preference data.</li>
+      </ol>
+      <div class="refs">
+        <a href="https://arxiv.org/abs/2501.12948" target="_blank" rel="noopener noreferrer">
+          <span class="ref-id">arXiv:2501.12948</span>
+          <span>DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via Reinforcement Learning</span>
+        </a>
+      </div>
     </div>
   </section>
 
@@ -1925,7 +2093,7 @@
     <div class="inner">
       <span class="kicker">Post-training · The frontier (2026)</span>
       <h2>Where post-training is now</h2>
-      <p>A post-training pipeline reflecting current frontier practices (mid-2026) is still built off the same aforementioned building blocks: SFT, RL, and distillation.</p>
+      <p>A post-training pipeline reflecting current frontier practices (mid-2026) is still built on the same building blocks: SFT, RL, and distillation.</p>
       <div style="display: flex; flex-direction: column; gap: 0.4rem; margin-top: 0.55rem;">
         <div class="box" style="padding: 0.5rem 0.75rem; display: grid; grid-template-columns: 1.7rem 1fr; gap: 0.55rem; align-items: start;">
           <div style="font-weight: 700; color: var(--accent); font-size: 1.05rem;">1</div>
@@ -1946,6 +2114,12 @@
           <div>
             <div style="font-weight: 600; font-size: 0.96rem;">Domain-specialist RL</div>
             <p style="font-size: 0.88rem; margin: 0.15rem 0 0; line-height: 1.5;">Separate <strong>GRPO / DAPO</strong> runs per capability cluster — math, code, agentic tool use, general reasoning. <strong>RLVR where verifiers exist</strong>, learned reward models elsewhere. Each run produces a specialist checkpoint.</p>
+            <div class="refs">
+              <a href="https://arxiv.org/abs/2503.14476" target="_blank" rel="noopener noreferrer">
+                <span class="ref-id">arXiv:2503.14476</span>
+                <span>DAPO: An Open-Source LLM Reinforcement Learning System at Scale</span>
+              </a>
+            </div>
           </div>
         </div>
         <div class="box" style="padding: 0.5rem 0.75rem; display: grid; grid-template-columns: 1.7rem 1fr; gap: 0.55rem; align-items: start;">
@@ -1960,6 +2134,134 @@
           <div>
             <div style="font-weight: 600; font-size: 0.96rem;">Final safety / refusal / style polish</div>
             <p style="font-size: 0.88rem; margin: 0.15rem 0 0; line-height: 1.5;">Often a short DPO or RL pass over a small targeted dataset to clean up edge-case refusals, sharpen tone, and lock in safety behaviors before release.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- 44. Next time! -->
+  <section class="slide content">
+    <div class="inner">
+      <span class="kicker">Next time!</span>
+      <h2>Model Intelligence Part 2</h2>
+      <p>What does it mean for AI to be "intelligent"?</p>
+      <div class="cols" style="margin-top: 0.65rem; align-items: start;">
+        <div class="box">
+          <strong>Superhuman Adaptable Intelligence</strong>
+          <ul style="margin: 0.4rem 0 0; padding-left: 1.1rem; font-size: 0.92rem;">
+            <li>Goldfeder, Wyder, LeCun, and Shwartz-Ziv argue that our conception of AGI is flawed.</li>
+            <li>They propose that we should design AI to specialize and achieve superhuman performance.</li>
+            <li>Superhuman Adaptable Intelligence = "intelligence that can learn to exceed humans at anything important that we can do, and that can fill in the skill gaps where humans are incapable."</li>
+          </ul>
+          <div class="refs">
+            <a href="https://arxiv.org/abs/2602.23643" target="_blank" rel="noopener noreferrer">
+              <span class="ref-id">arXiv:2602.23643</span>
+              <span>AI Must Embrace Specialization via Superhuman Adaptable Intelligence</span>
+            </a>
+          </div>
+        </div>
+        <div class="box">
+          <strong>Model-Agnostic Meta-Learning</strong>
+          <ul style="margin: 0.4rem 0 0; padding-left: 1.1rem; font-size: 0.92rem;">
+            <li>How do we train a model to be better at <em>learning</em> how to do new things?</li>
+            <li>Meta-learning is an active field of research dedicated to how to design maximally adaptable algorithms.</li>
+            <li>MAML's goal is to train a model to be easy to fine-tune.</li>
+          </ul>
+          <div class="refs">
+            <a href="https://arxiv.org/abs/1703.03400" target="_blank" rel="noopener noreferrer">
+              <span class="ref-id">arXiv:1703.03400</span>
+              <span>Model-Agnostic Meta-Learning for Fast Adaptation of Deep Networks</span>
+            </a>
+            <a href="https://interactive-maml.github.io/maml.html" target="_blank" rel="noopener noreferrer">
+              <span class="ref-id">interactive-maml.github.io</span>
+              <span>An Interactive Introduction to Model-Agnostic Meta-Learning</span>
+            </a>
+          </div>
+        </div>
+      </div>
+      <div class="callout">Thank you!</div>
+    </div>
+  </section>
+
+  <!-- 45. References -->
+  <section class="slide content">
+    <div class="inner ref-deck">
+      <span class="kicker">References</span>
+      <h2 style="margin-bottom: 0.4rem;">References and Learning Resources</h2>
+      <div class="ref-grid">
+
+        <div class="ref-group">
+          <h3>Pre-training</h3>
+          <div class="ref-list refs">
+            <a href="https://arxiv.org/abs/1706.03762" target="_blank" rel="noopener noreferrer"><span class="rid">arXiv:1706.03762</span> · Attention Is All You Need (Transformer)</a>
+            <a href="https://jalammar.github.io/illustrated-transformer/" target="_blank" rel="noopener noreferrer"><span class="rid">jalammar.github.io</span> · The Illustrated Transformer</a>
+            <a href="https://www.youtube.com/watch?v=9-Jl0dxWQs8" target="_blank" rel="noopener noreferrer"><span class="rid">YouTube</span> · How might LLMs store facts (3Blue1Brown)</a>
+            <a href="https://arxiv.org/abs/1508.07909" target="_blank" rel="noopener noreferrer"><span class="rid">arXiv:1508.07909</span> · Subword Units (BPE tokenization)</a>
+            <a href="https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf" target="_blank" rel="noopener noreferrer"><span class="rid">OpenAI, 2019</span> · Language Models are Unsupervised Multitask Learners (GPT-2)</a>
+            <a href="https://arxiv.org/abs/2104.09864" target="_blank" rel="noopener noreferrer"><span class="rid">arXiv:2104.09864</span> · RoPE positional encoding</a>
+            <a href="https://arxiv.org/abs/1607.06450" target="_blank" rel="noopener noreferrer"><span class="rid">arXiv:1607.06450</span> · Layer Normalization</a>
+            <a href="https://arxiv.org/abs/1512.03385" target="_blank" rel="noopener noreferrer"><span class="rid">arXiv:1512.03385</span> · Residual connections (ResNet)</a>
+          </div>
+        </div>
+
+        <div class="ref-group">
+          <h3>SFT &amp; distillation</h3>
+          <div class="ref-list refs">
+            <a href="https://arxiv.org/abs/2203.02155" target="_blank" rel="noopener noreferrer"><span class="rid">arXiv:2203.02155</span> · InstructGPT (SFT + RLHF)</a>
+            <a href="https://arxiv.org/abs/2304.07327" target="_blank" rel="noopener noreferrer"><span class="rid">arXiv:2304.07327</span> · OpenAssistant Conversations</a>
+            <a href="https://arxiv.org/abs/2201.11903" target="_blank" rel="noopener noreferrer"><span class="rid">arXiv:2201.11903</span> · Chain-of-Thought Prompting</a>
+            <a href="https://arxiv.org/abs/1503.02531" target="_blank" rel="noopener noreferrer"><span class="rid">arXiv:1503.02531</span> · Distilling the Knowledge (logit-level)</a>
+            <a href="https://arxiv.org/abs/1606.07947" target="_blank" rel="noopener noreferrer"><span class="rid">arXiv:1606.07947</span> · Sequence-Level Knowledge Distillation</a>
+          </div>
+        </div>
+
+        <div class="ref-group">
+          <h3>Preference alignment</h3>
+          <div class="ref-list refs">
+            <a href="https://arxiv.org/abs/1706.03741" target="_blank" rel="noopener noreferrer"><span class="rid">arXiv:1706.03741</span> · Deep RL from Human Preferences</a>
+            <a href="https://arxiv.org/abs/1707.06347" target="_blank" rel="noopener noreferrer"><span class="rid">arXiv:1707.06347</span> · Proximal Policy Optimization (PPO)</a>
+            <a href="https://cameronrwolfe.substack.com/p/ppo-llm" target="_blank" rel="noopener noreferrer"><span class="rid">cameronrwolfe.substack.com</span> · PPO: The Key to LLM Alignment</a>
+            <a href="https://spinningup.openai.com/en/latest/spinningup/rl_intro3.html" target="_blank" rel="noopener noreferrer"><span class="rid">OpenAI Spinning Up</span> · Intro to Policy Optimization</a>
+            <a href="https://arxiv.org/abs/2305.18290" target="_blank" rel="noopener noreferrer"><span class="rid">arXiv:2305.18290</span> · Direct Preference Optimization (DPO)</a>
+            <a href="https://arxiv.org/abs/2402.01306" target="_blank" rel="noopener noreferrer"><span class="rid">arXiv:2402.01306</span> · KTO</a>
+            <a href="https://arxiv.org/abs/2403.07691" target="_blank" rel="noopener noreferrer"><span class="rid">arXiv:2403.07691</span> · ORPO</a>
+            <a href="https://arxiv.org/abs/2310.12036" target="_blank" rel="noopener noreferrer"><span class="rid">arXiv:2310.12036</span> · IPO (general preference paradigm)</a>
+            <a href="https://arxiv.org/abs/2309.00267" target="_blank" rel="noopener noreferrer"><span class="rid">arXiv:2309.00267</span> · RLAIF</a>
+            <a href="https://arxiv.org/abs/2212.08073" target="_blank" rel="noopener noreferrer"><span class="rid">arXiv:2212.08073</span> · Constitutional AI</a>
+          </div>
+        </div>
+
+        <div class="ref-group">
+          <h3>RLVR &amp; reasoning RL</h3>
+          <div class="ref-list refs">
+            <a href="https://openai.com/index/faulty-reward-functions/" target="_blank" rel="noopener noreferrer"><span class="rid">OpenAI, 2016</span> · Faulty Reward Functions (CoastRunners)</a>
+            <a href="https://arxiv.org/abs/2310.13548" target="_blank" rel="noopener noreferrer"><span class="rid">arXiv:2310.13548</span> · Understanding Sycophancy in LMs</a>
+            <a href="https://arxiv.org/abs/2402.03300" target="_blank" rel="noopener noreferrer"><span class="rid">arXiv:2402.03300</span> · DeepSeekMath (GRPO)</a>
+            <a href="https://arxiv.org/abs/2312.08935" target="_blank" rel="noopener noreferrer"><span class="rid">arXiv:2312.08935</span> · Math-Shepherd (PRM)</a>
+            <a href="https://arxiv.org/abs/2305.20050" target="_blank" rel="noopener noreferrer"><span class="rid">arXiv:2305.20050</span> · Let's Verify Step by Step (PRM800K)</a>
+            <a href="https://arxiv.org/abs/2503.14476" target="_blank" rel="noopener noreferrer"><span class="rid">arXiv:2503.14476</span> · DAPO</a>
+          </div>
+        </div>
+
+        <div class="ref-group">
+          <h3>Reasoning models &amp; R1</h3>
+          <div class="ref-list refs">
+            <a href="https://arxiv.org/abs/2501.12948" target="_blank" rel="noopener noreferrer"><span class="rid">arXiv:2501.12948</span> · DeepSeek-R1 (R1, R1-Zero, distill)</a>
+            <a href="https://arxiv.org/abs/2412.19437" target="_blank" rel="noopener noreferrer"><span class="rid">arXiv:2412.19437</span> · DeepSeek-V3 Technical Report</a>
+            <a href="https://arxiv.org/abs/2505.09388" target="_blank" rel="noopener noreferrer"><span class="rid">arXiv:2505.09388</span> · Qwen3 Technical Report</a>
+            <a href="https://arxiv.org/abs/2501.12599" target="_blank" rel="noopener noreferrer"><span class="rid">arXiv:2501.12599</span> · Kimi k1.5</a>
+            <a href="https://openai.com/index/learning-to-reason-with-llms/" target="_blank" rel="noopener noreferrer"><span class="rid">OpenAI, 2024</span> · Learning to Reason with LLMs (o1)</a>
+            <a href="https://github.com/huggingface/open-r1" target="_blank" rel="noopener noreferrer"><span class="rid">GitHub</span> · OpenR1 / TinyZero / SimpleRL-Zero (open reproductions)</a>
+          </div>
+        </div>
+
+        <div class="ref-group">
+          <h3>Next time</h3>
+          <div class="ref-list refs">
+            <a href="https://arxiv.org/abs/2602.23643" target="_blank" rel="noopener noreferrer"><span class="rid">arXiv:2602.23643</span> · Superhuman Adaptable Intelligence</a>
+            <a href="https://arxiv.org/abs/1703.03400" target="_blank" rel="noopener noreferrer"><span class="rid">arXiv:1703.03400</span> · Model-Agnostic Meta-Learning (MAML)</a>
           </div>
         </div>
       </div>
