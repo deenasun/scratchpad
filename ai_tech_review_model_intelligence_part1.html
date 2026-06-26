@@ -723,6 +723,30 @@
       font-size: 0.85rem;
       letter-spacing: 0.05em;
     }
+
+    /* ---- Print / PDF export: one slide per landscape page ---- */
+    @media print {
+      @page {
+        size: 1280px 720px;
+        margin: 0;
+      }
+      html, body {
+        height: auto;
+        overflow: visible;
+      }
+      .nav, .counter { display: none !important; }
+      .slide {
+        display: flex !important;
+        width: 1280px;
+        height: 720px;
+        page-break-after: always;
+        break-after: page;
+      }
+      .slide:last-of-type {
+        page-break-after: auto;
+        break-after: auto;
+      }
+    }
   </style>
 </head>
 <body>
@@ -733,9 +757,9 @@
 
   <!-- 1. Deck title -->
   <section class="slide active">
-    <h1>Model Intelligence</h1>
+    <h1>Model Intelligence Part 1</h1>
     <p class="sub">Pre-Training &amp; Post-Training</p>
-    <p class="sub muted" style="font-size: 1rem;">AI Tech Review | Deena | June 2026</p>
+    <p class="sub muted" style="font-size: 1rem;">AI Tech Review | Deena | June 26, 2026</p>
   </section>
 
   <!-- 2. Part 1 divider + pipeline map -->
